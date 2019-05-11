@@ -1,4 +1,6 @@
-import { app, BrowserWindow } from 'electron' // eslint-disable-line
+import { app, BrowserWindow, Menu } from 'electron' // eslint-disable-line
+
+import '../renderer/store';
 
 /**
  * Set `__static` path to static files in production
@@ -17,6 +19,9 @@ function createWindow() {
   /**
    * Initial window options
    */
+
+  Menu.setApplicationMenu(null);
+
   mainWindow = new BrowserWindow({
     show: false,
   });
