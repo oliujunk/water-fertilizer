@@ -77,24 +77,24 @@
 </template>
 
 <script>
-const SerialPort = require('serialport');
-const InterByteTimeout = require('@serialport/parser-inter-byte-timeout');
+const SerialPort = require("serialport");
+const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 
 export default {
-  name: 'setting',
+  name: "setting",
 
   data() {
     return {
       portList: [],
-      portName: '',
+      portName: "",
       baudRate: 9600,
       dataBits: 8,
-      parity: 'none',
+      parity: "none",
       stopBits: 1,
-      openButtonText: '打开串口',
-      openButtonType: 'danger',
+      openButtonText: "打开串口",
+      openButtonType: "danger",
       openButtonStatus: false,
-      serialPort: null,
+      serialPort: null
     };
   },
 
@@ -106,42 +106,46 @@ export default {
           dataBits: this.dataBits,
           parity: this.parity,
           stopBits: this.stopBits,
-          autoOpen: false,
+          autoOpen: false
         });
-        serialPort.open((err) => {
+        serialPort.open(err => {
           if (err) {
-            this.$message.error(`打开串口${this.portName}失败！请检查该串口是否被占用。`);
+            this.$message.error(
+              `打开串口${this.portName}失败！请检查该串口是否被占用。`
+            );
           } else {
-            this.openButtonText = '关闭串口';
-            this.openButtonType = 'success';
+            this.openButtonText = "关闭串口";
+            this.openButtonType = "success";
             this.openButtonStatus = true;
             this.serialPort = serialPort;
-            const parser = serialPort.pipe(new InterByteTimeout({ interval: 50 }));
-            parser.on('data', () => {});
-            this.$store.commit('serialPort', { serialPort });
+            const parser = serialPort.pipe(
+              new InterByteTimeout({ interval: 50 })
+            );
+            parser.on("data", () => {});
+            this.$store.commit("serialPort", { serialPort });
           }
         });
       } else {
-        this.serialPort.close((err) => {
+        this.serialPort.close(err => {
           if (err) {
             this.$message.error(`关闭串口${this.portName}失败！`);
           } else {
-            this.openButtonText = '打开串口';
-            this.openButtonType = 'danger';
+            this.openButtonText = "打开串口";
+            this.openButtonType = "danger";
             this.openButtonStatus = false;
-            this.$store.commit('serialPort', { serialPort: null });
+            this.$store.commit("serialPort", { serialPort: null });
           }
         });
       }
-    },
+    }
   },
 
   mounted() {
     SerialPort.list((err, ports) => {
       this.portList = [...ports];
-      this.portName = ports[0].comName;
+      // this.portName = ports[0].comName;
     });
-  },
+  }
 };
 </script>
 

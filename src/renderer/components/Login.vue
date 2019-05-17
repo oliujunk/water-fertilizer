@@ -94,6 +94,7 @@ export default {
 
   mounted() {
     this.$db.user.loadDatabase();
+    this.$db.user.insert({ username: 'test', password: md5('123456') });
   },
 };
 </script>

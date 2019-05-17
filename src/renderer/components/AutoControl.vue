@@ -1,14 +1,552 @@
-<<template>
-  <div>
-    自动控制
+/* eslint-disable */
+<template>
+  <div class="myBody" :style="mainHeight">
+    <el-container>
+      <el-main>
+        <div class="mainContent">
+          <div class="mainTop">
+            <div v-if="carListLength != 0">
+              <div class="car" v-for="(item,index) in carList" :key="index">
+                <div class="carContent" :class="{carContentHover:!autoMode}">
+                  <div class="carName">{{item.name}} ({{index+1}})</div>
+                  <div class="carDelect carHover" @click="onCarDelect(index)">
+                    <i class="el-icon-remove"></i>
+                  </div>
+                  <div class="carAdd carHover" @click="onCarAdd(index)">
+                    <i class="el-icon-circle-plus"></i>
+                  </div>
+                </div>
+                <div class="carLine" v-show="!(index == carListLength - 1)">---></div>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="car">
+                <div class="carContent" :class="{carContentHover:!autoMode}">
+                  <div class="carName">无片区 (0)</div>
+                  <div class="carAdd carHover" @click="onCarAdd(-1)">
+                    <i class="el-icon-circle-plus"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mainBottom">
+            <div class="IrrManagement">
+              <div class="sideTitle">灌溉制度</div>
+
+              <div class="ferSelectItem">
+                <div class="paramTitle">灌溉周期:</div>
+                <el-input
+                  v-model="IrrManagementParam.cycle"
+                  placeholder="请输入内容"
+                  class="paramInput"
+                  :disabled="autoMode"
+                ></el-input>
+                <div class="unit">天</div>
+              </div>
+
+              <div class="ferSelectItem">
+                <div class="paramTitle">灌溉日时间:</div>
+                <el-input
+                  :disabled="autoMode"
+                  v-model="IrrManagementParam.dayTime"
+                  placeholder="请输入内容"
+                  class="paramInput"
+                ></el-input>
+                <div class="unit">小时</div>
+              </div>
+
+              <div class="ferSelectItem">
+                <div class="paramTitle">轮灌时间:</div>
+                <el-input
+                  v-model="IrrManagementParam.time"
+                  placeholder="请输入内容"
+                  class="paramInput"
+                  :disabled="autoMode"
+                ></el-input>
+                <div class="unit">小时</div>
+              </div>
+
+              <div class="sideConfirm">
+                <el-button type="primary" round @click="onIrrConfirm" :disabled="autoMode">确认修改</el-button>
+              </div>
+            </div>
+            <div class="control">
+              <el-switch v-model="autoMode" active-text="默认参数" inactive-text="自定义参数"></el-switch>
+              <el-button type="primary">确认运行</el-button>
+            </div>
+          </div>
+        </div>
+      </el-main>
+      <el-aside width="400px">
+        <div class="side">
+          <div class="ferManagement">
+            <div class="sideTitle">施肥制度</div>
+            <div class="sideName">
+              <div
+                class="sideItem"
+                v-for="(item,index) in ferRelayList"
+                :key="index"
+                @click="onSideItem(index)"
+              >
+                <div class="shuli">{{item.name}}</div>
+                <div class="bottom" :class="{current: ferRelayCurrent == index}"></div>
+              </div>
+            </div>
+            <div class="sideContenr">
+              <div class="ferSelectItem">
+                <div class="paramTitle">肥料类型:</div>
+                <el-select
+                  v-model="ferSelectParam.ferType"
+                  placeholder="请选择"
+                  class="paramInput"
+                  :disabled="autoMode"
+                >
+                  <el-option
+                    v-for="item in ferTypeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  ></el-option>
+                </el-select>
+                <div class="unit"></div>
+              </div>
+              <div class="ferSelectItem">
+                <div class="paramTitle">肥料配比:</div>
+                <el-select
+                  :disabled="autoMode"
+                  v-model="ferSelectParam.concentration"
+                  placeholder="请选择"
+                  class="paramInput"
+                >
+                  <el-option
+                    v-for="item in concentrationOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  ></el-option>
+                </el-select>
+                <div class="unit"></div>
+              </div>
+
+              <div class="ferSelectItem">
+                <div class="paramTitle">施肥时间:</div>
+                <el-input
+                  v-model="ferSelectParam.time"
+                  placeholder="请输入内容"
+                  class="paramInput"
+                  :disabled="autoMode"
+                ></el-input>
+                <div class="unit">小时</div>
+              </div>
+
+              <div class="ferSelectItem">
+                <div class="paramTitle">施肥周期:</div>
+                <el-input
+                  v-model="ferSelectParam.cycle"
+                  placeholder="请输入内容"
+                  class="paramInput"
+                  :disabled="autoMode"
+                ></el-input>
+                <div class="unit">天</div>
+              </div>
+
+              <div class="ferSelectItem">
+                <div class="paramTitle">&nbsp;施肥量&nbsp;&nbsp;:</div>
+                <el-input
+                  v-model="ferSelectParam.value"
+                  placeholder="请输入内容"
+                  class="paramInput"
+                  :disabled="autoMode"
+                ></el-input>
+                <div class="unit"></div>
+              </div>
+            </div>
+            <div class="sideConfirm">
+              <el-button type="primary" round @click="onSideConfirm" :disabled="autoMode">确认修改</el-button>
+            </div>
+          </div>
+        </div>
+      </el-aside>
+    </el-container>
+    <el-dialog title="选择片区" :visible.sync="dialogTableVisible" width="30%" center>
+      <el-select v-model="dialogValue" placeholder="请选择要执行的片区">
+        <el-option v-for="(item,index) in areaList" :key="index" :label="item.name" :value="index"></el-option>
+      </el-select>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogTableVisible = false">取 消</el-button>
+        <el-button type="primary" @click="onDialogConfirm()">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'autoControl',
+  name: "autoControl",
+
+  data() {
+    return {
+      mainHeight: { height: `${window.innerHeight - 65}px` },
+      ferRelayList: [
+        {
+          name: "施肥阀1",
+          jId: "0",
+          param: {
+            ferType: "氮肥",
+            concentration: "1/30",
+            time: "30",
+            cycle: "2",
+            value: "30"
+          }
+        },
+        {
+          name: "施肥阀2",
+          jId: "1",
+          param: {
+            ferType: "氮肥",
+            concentration: "1/30",
+            time: "30",
+            cycle: "2",
+            value: "30"
+          }
+        },
+        {
+          name: "施肥阀3",
+          jId: "2",
+          param: {
+            ferType: "氮肥",
+            concentration: "1/30",
+            time: "30",
+            cycle: "2",
+            value: "30"
+          }
+        },
+        {
+          name: "施肥阀4",
+          jId: "3",
+          param: {
+            ferType: "氮肥",
+            concentration: "1/30",
+            time: "30",
+            cycle: "2",
+            value: "30"
+          }
+        }
+      ],
+      ferRelayCurrent: "0",
+      ferSelectParam: {
+        ferType: "氮肥",
+        concentration: "1/30",
+        time: "30",
+        cycle: "2",
+        value: "30"
+      },
+      ferTypeOptions: [
+        {
+          value: "选项1",
+          label: "氮肥"
+        },
+        {
+          value: "选项2",
+          label: "钾肥"
+        }
+      ],
+      concentrationOptions: [
+        {
+          value: "选项1",
+          label: "1/30"
+        },
+        {
+          value: "选项2",
+          label: "1/100"
+        }
+      ],
+
+      IrrManagementParam: {
+        cycle: "31",
+        dayTime: "32",
+        time: "33"
+      },
+
+      autoMode: true,
+
+      carList: [{ name: "盖伦" }, { name: "洛克萨斯" }],
+      carListLength: 2,
+      carCurrent: "",
+      dialogTableVisible: false,
+      dialogValue: "",
+      areaList: [
+        { name: "皇子", id: "0" },
+        { name: "瞎子", id: "1" },
+        { name: "蜘蛛", id: "2" }
+      ]
+    };
+  },
+  methods: {
+    onSideItem(index) {
+      this.ferRelayCurrent = index;
+      this.ferSelectParam = JSON.parse(
+        JSON.stringify(this.ferRelayList[index].param)
+      );
+    },
+    onSideConfirm() {
+      this.ferRelayList[this.ferRelayCurrent].param = this.ferSelectParam;
+      const h = this.$createElement;
+
+      this.$notify({
+        title: "标题名称",
+        message: h("i", { style: "color: teal" }, "施肥参数修改成功")
+      });
+    },
+    onIrrConfirm() {
+      const h = this.$createElement;
+      this.$notify({
+        title: "标题名称",
+        message: h("i", { style: "color: teal" }, "灌溉参数修改成功")
+      });
+    },
+    onCarAdd(index) {
+      this.carCurrent = index;
+      this.dialogTableVisible = true;
+    },
+    onCarDelect(index) {
+      this.carList.splice(index, 1);
+      this.carListLength = this.carList.length;
+    },
+    onDialogConfirm() {
+      if (this.dialogValue !== "") {
+        this.carList.splice(
+          this.carCurrent + 1,
+          0,
+          this.areaList[this.dialogValue]
+        );
+
+        this.carListLength = this.carList.length;
+        this.dialogValue = "";
+        this.dialogTableVisible = false;
+      }
+    }
+  }
 };
 </script>
 
-<style>
+<style scoped>
+/* 整体布局 */
+.myBody {
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.el-aside {
+  background-color: #d3dce6;
+  color: #333;
+  text-align: center;
+  line-height: 200px;
+}
+
+.el-main {
+  background-color: #e9eef3;
+  color: #333;
+  text-align: center;
+  line-height: 160px;
+}
+
+/* 主内容区 */
+.mainContent {
+  display: flex;
+  flex-flow: column;
+  justify-content: space-between;
+  min-height: 100%;
+  background-color: #b3c0d1;
+}
+
+.mainTop > div {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+}
+
+.car {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-around;
+  height: 60px;
+  padding: 10px 0;
+}
+
+.carContent {
+  display: block;
+  position: relative;
+  padding: 0 28px;
+  /* background-color: pink; */
+  height: 40px;
+  line-height: 40px;
+}
+
+.carName {
+  padding: 0 5px;
+  background-color: #409eff;
+  color: #ffffff;
+  border-radius: 5px;
+}
+
+.carDelect {
+  display: none;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-size: 24px;
+  color: #f56c6c;
+}
+
+.carAdd {
+  display: none;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  font-size: 24px;
+  color: #67c23a;
+}
+
+.carContentHover:hover .carHover {
+  display: block;
+  cursor: pointer;
+}
+
+.carLine {
+  height: 40px;
+  line-height: 40px;
+  font-size: 24px;
+}
+
+.mainBottom {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-around;
+}
+
+.control {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
+}
+
+.control > .el-switch {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+/* 右侧侧边栏布局 */
+.side {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+  height: 100%;
+  margin: auto 20px;
+}
+
+/* 灌溉管理 */
+.IrrManagement {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+  height: 260px;
+  background-color: #e9eef3;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+/* 施肥管理 */
+.ferManagement {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+  height: 520px;
+  background-color: #e9eef3;
+  padding: 0 10px;
+}
+
+.sideTitle {
+  height: 36px;
+  line-height: 36px;
+  font-size: 28px;
+  text-align: center;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.sideName {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-around;
+}
+
+.sideItem {
+  background-color: #409eff;
+  display: flex;
+  flex-flow: column nowrap;
+  cursor: pointer;
+}
+
+.shuli {
+  width: 20px;
+  margin: 0 auto;
+  line-height: 24px;
+  font-size: 20px;
+  word-wrap: break-word; /*英文的时候需要加上这句，自动换行*/
+
+  margin: 10px;
+}
+
+.sideItem .bottom {
+  width: 40px;
+  margin: 0 auto;
+  height: 8px;
+  background-color: #d3dce6;
+}
+
+.sideItem .current {
+  background-color: #409eff;
+}
+
+.ferSelectItem {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  background-color: #409eff;
+  height: 50px;
+}
+
+.ferSelectItem .paramTitle {
+  display: inline-block;
+  height: 50px;
+  line-height: 50px;
+  margin-right: 20px;
+  width: 74px;
+  text-align: center;
+}
+
+.ferSelectItem > .paramInput {
+  display: inline-block;
+  height: 50px;
+  line-height: 50px;
+  width: 180px;
+}
+
+.ferSelectItem .unit {
+  display: inline-block;
+  height: 50px;
+  line-height: 50px;
+  width: 50px;
+}
+
+.sideConfirm {
+  display: block;
+  height: 50px;
+  line-height: 50px;
+}
 </style>
