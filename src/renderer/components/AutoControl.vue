@@ -537,6 +537,12 @@ export default {
   width: 180px;
 }
 
+.ferSelectItem > .el-select {
+  height: 40px;
+  line-height: 40px;
+  margin: auto;
+}
+
 .ferSelectItem .unit {
   display: inline-block;
   height: 50px;
