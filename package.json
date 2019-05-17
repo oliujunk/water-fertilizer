@@ -61,7 +61,7 @@
     "js-cookie": "^2.2.0",
     "js-md5": "^0.7.3",
     "nedb": "^1.8.0",
-    "serialport": "^7.1.5",
+    "serialport": "^7.0.0",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",
     "vue-router": "^3.0.1",
