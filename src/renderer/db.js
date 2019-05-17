@@ -18,6 +18,14 @@ const db = {
   element: new Datastore({
     filename: path.join(remote.app.getPath('userData'), '/db/element.db'),
   }),
+
+  pageHome: new Datastore({
+    filename: path.join(remote.app.getPath('userData'), '/db/pageHome.db'),
+  }),
+
+  settingPage: new Datastore({
+    filename: path.join(remote.app.getPath('userData'), '/db/settingPage.db'),
+  }),
 };
 
 export default db;

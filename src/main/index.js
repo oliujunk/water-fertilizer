@@ -23,10 +23,13 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   mainWindow = new BrowserWindow({
-    show: false,
+    width: 1024,
+    height: 768,
+    // show: false,
+    // frame: false,
   });
 
-  mainWindow.maximize();
+  // mainWindow.maximize();
 
   mainWindow.loadURL(winURL);
 

@@ -12,13 +12,9 @@ export default new Vuex.Store({
   ],
   strict: process.env.NODE_ENV !== 'production',
   state: {
-    serialPort: null,
     username: '',
   },
   mutations: {
-    serialPort(state, payload) {
-      state.serialPort = payload.serialPort;
-    },
     username(state, payload) {
       state.username = payload.username;
     },
