@@ -11,7 +11,7 @@
       </div>
     </el-header>
     <el-main :style="mainHeight">
-      <el-carousel height="600px" :interval="5000">
+      <el-carousel height="500px" :interval="5000">
         <el-carousel-item v-for="index in 3" :key="index">
           <!-- <img :src="require(`../static/${index}.jpg`)"> -->
           <div> image {{ index }}</div>
@@ -25,15 +25,15 @@
       style="margin-top: 100px;"
       width="400px"
     >
-      <el-form :model="loginForm">
-        <el-form-item>
+      <el-form :model="loginForm" status-icon :rules="rules" ref="loginForm">
+        <el-form-item prop="username">
           <el-input
             prefix-icon="el-icon-user"
             v-model="loginForm.username"
             placeholder="用户名"
           ></el-input>
         </el-form-item>
-        <el-form-item>
+        <el-form-item prop="password">
           <el-input
             prefix-icon="el-icon-key"
             v-model="loginForm.password"
@@ -58,6 +58,19 @@ export default {
   name: 'login',
 
   data() {
+    const validateUsername = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入用户名'));
+      }
+      callback();
+    };
+    const validatePassword = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入密码'));
+      }
+      callback();
+    };
+
     return {
       mainHeight: { height: `${window.innerHeight - 136}px` },
       isLogining: false,
@@ -65,6 +78,10 @@ export default {
       loginForm: {
         username: '',
         password: '',
+      },
+      rules: {
+        username: [{ validator: validateUsername, trigger: 'blur' }],
+        password: [{ validator: validatePassword, trigger: 'blur' }],
       },
     };
   },
@@ -76,16 +93,19 @@ export default {
     },
     handleLogin() {
       this.isLogining = true;
-      this.$db.user.find({ username: 'test' }, (err, docs) => {
+      this.$db.user.findOne({ username: this.loginForm.username }, (err, docs) => {
         if (err) {
           console.log(err);
         } else if (docs) {
           const md5Password = md5(this.loginForm.password);
-          if (md5Password === docs[0].password) {
+          if (md5Password === docs.password) {
             Cookies.set('token', '12345678');
             sessionStorage.setItem('user', this.loginForm.username);
             this.$store.commit('username', { username: this.loginForm.username });
             this.$router.push('/');
+          } else {
+            this.isLogining = false;
+            this.$message.error('用户名或密码错误！');
           }
         }
       });

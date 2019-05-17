@@ -1,19 +1,19 @@
 <<template>
   <div>
     <el-row>
-      <el-col :span="4">
+      <el-col :span="12">
         <el-card class="communication-setting">
           <div slot="header">
-            <span>串口设置</span>
+            <span>通信设置</span>
           </div>
-          <el-col :span="8">
-            <el-row type="flex" justify="start" align="middle">串口号</el-row>
-            <el-row type="flex" justify="start" align="middle">波特率</el-row>
-            <el-row type="flex" justify="start" align="middle">数据位</el-row>
-            <el-row type="flex" justify="start" align="middle">校验位</el-row>
-            <el-row type="flex" justify="start" align="middle">停止位</el-row>
+          <el-col :span="12">
+            <el-row type="flex" justify="center" align="middle">串口号</el-row>
+            <el-row type="flex" justify="center" align="middle">波特率</el-row>
+            <el-row type="flex" justify="center" align="middle">数据位</el-row>
+            <el-row type="flex" justify="center" align="middle">校验位</el-row>
+            <el-row type="flex" justify="center" align="middle">停止位</el-row>
           </el-col>
-          <el-col :span="16">
+          <el-col :span="12">
             <el-row type="flex" justify="start" align="middle">
               <el-select v-model="portName" size="small">
                 <el-option
@@ -65,11 +65,18 @@
               </el-select>
             </el-row>
             <el-row>
-              <el-button :type="openButtonType" size="small" @click="handleOpenPort" round>
-                {{openButtonText}}
+              <el-button type="primary" size="small" @click="handleSave" round>
+                保存
               </el-button>
             </el-row>
           </el-col>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card class="communication-setting">
+          <div slot="header">
+            <span>采集设置</span>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -77,8 +84,10 @@
 </template>
 
 <script>
-const SerialPort = require("serialport");
-const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
+import moment from 'moment';
+const SerialPort = require('serialport');
+const InterByteTimeout = require('@serialport/parser-inter-byte-timeout');
+const schedule = require('node-schedule');
 
 export default {
   name: "setting",
@@ -91,61 +100,82 @@ export default {
       dataBits: 8,
       parity: "none",
       stopBits: 1,
-      openButtonText: "打开串口",
-      openButtonType: "danger",
-      openButtonStatus: false,
-      serialPort: null
+      serialPort: null,
+      schedules: {},
     };
   },
 
   methods: {
-    handleOpenPort() {
-      if (!this.openButtonStatus) {
-        const serialPort = new SerialPort(this.portName, {
-          baudRate: this.baudRate,
-          dataBits: this.dataBits,
-          parity: this.parity,
-          stopBits: this.stopBits,
-          autoOpen: false
-        });
-        serialPort.open(err => {
+    handleSave() {
+      if (this.serialPort) {
+        this.serialPort.close((err) => {
           if (err) {
-            this.$message.error(
-              `打开串口${this.portName}失败！请检查该串口是否被占用。`
-            );
-          } else {
-            this.openButtonText = "关闭串口";
-            this.openButtonType = "success";
-            this.openButtonStatus = true;
-            this.serialPort = serialPort;
-            const parser = serialPort.pipe(
-              new InterByteTimeout({ interval: 50 })
-            );
-            parser.on("data", () => {});
-            this.$store.commit("serialPort", { serialPort });
+            this.$message.error(`关闭串口${this.serialPort.path}失败！`);
           }
         });
-      } else {
-        this.serialPort.close(err => {
-          if (err) {
-            this.$message.error(`关闭串口${this.portName}失败！`);
-          } else {
-            this.openButtonText = "打开串口";
-            this.openButtonType = "danger";
-            this.openButtonStatus = false;
-            this.$store.commit("serialPort", { serialPort: null });
-          }
-        });
+        this.serialPort = null;
       }
-    }
+      const serialPort = new SerialPort(this.portName, {
+        baudRate: this.baudRate,
+        dataBits: this.dataBits,
+        parity: this.parity,
+        stopBits: this.stopBits,
+        autoOpen: false,
+      });
+      serialPort.open((err) => {
+        if (err) {
+          this.$message.error(`打开串口${this.portName}失败！请检查该串口是否被占用。`);
+        } else {
+          const parser = serialPort.pipe(new InterByteTimeout({ interval: 50 }));
+          parser.on('data', () => {});
+          const job1 = schedule.scheduleJob('*/5 * * * * *', () => {
+            console.log(new Date());
+            const send = Buffer.alloc(6);
+            send[0] = 0x01;
+            send[1] = 0x03;
+            send[2] = 0x00;
+            send[3] = 0x00;
+            send[4] = 0xF1;
+            send[5] = 0xD8;
+            serialPort.write(send);
+            console.log(job1);
+          });
+          this.schedules = { ...this.schedules, job1 };
+        }
+      });
+      this.serialPort = serialPort;
+      console.log(serialPort);
+    },
   },
 
   mounted() {
+    this.$db.settingPage.loadDatabase();
     SerialPort.list((err, ports) => {
       this.portList = [...ports];
       // this.portName = ports[0].comName;
     });
-  }
+
+    // this.$db.settingPage.findOne({}, (err, doc) => {
+    //   this.portName = doc.portName;
+    //   this.baudRate = doc.baudRate;
+    //   this.dataBits = doc.dataBits;
+    //   this.parity = doc.parity;
+    //   this.stopBits = doc.stopBits;
+    //   this.schedules = doc.schedules;
+    // });
+  },
+  beforeDestroy() {
+    this.$db.settingPage.remove({}, { multi: true });
+    this.$db.settingPage.insert({
+      portName: this.portName,
+      baudRate: this.baudRate,
+      dataBits: this.dataBits,
+      parity: this.parity,
+      stopBits: this.stopBits,
+      schedules: this.schedules,
+      dataTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
+    });
+  },
 };
 </script>
 

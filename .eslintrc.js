@@ -30,7 +30,8 @@ module.exports = {
     "comma-dangle": [0, "never"],
     'linebreak-style': ["off", "windows"],
     "function-paren-newline": 0,
-    'arrow-parens': 0
-
+    'arrow-parens': 0,
+    'consistent-return': 0,
+    'no-mixed-operators': 0,
   }
 }
