@@ -26,6 +26,9 @@ const db = {
   settingPage: new Datastore({
     filename: path.join(remote.app.getPath('userData'), '/db/settingPage.db'),
   }),
+  node: new Datastore({
+    filename: path.join(remote.app.getPath('userData'), '/db/node.db'),
+  }),
 };
 
 export default db;

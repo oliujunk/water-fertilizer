@@ -5,7 +5,6 @@ import Login from '@/components/Login';
 import NavMenu from '@/components/NavMenu';
 import Home from '@/components/Home';
 import AutoControl from '@/components/AutoControl';
-import ManualControl from '@/components/ManualControl';
 import Setting from '@/components/Setting';
 
 Vue.use(Router);
@@ -20,7 +19,6 @@ const router = new Router({
       children: [
         { path: '/home', component: Home },
         { path: '/autoControl', component: AutoControl },
-        { path: '/manualControl', component: ManualControl },
         { path: '/setting', component: Setting },
       ],
     },
