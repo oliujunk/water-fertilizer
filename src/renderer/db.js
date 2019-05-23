@@ -29,6 +29,9 @@ const db = {
   node: new Datastore({
     filename: path.join(remote.app.getPath('userData'), '/db/node.db'),
   }),
+  area: new Datastore({
+    filename: path.join(remote.app.getPath('userData'), '/db/area.db'),
+  }),
 };
 
 export default db;
