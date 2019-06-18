@@ -108,17 +108,28 @@
         </el-dialog>
       </el-tab-pane>
       <el-tab-pane label="灌溉制度">
-        当前灌溉制度：<br>
-        轮灌周期：{{irrigateProgram.period}}天，日工作时间：{{irrigateProgram.dailyWorkingHours}}小时，轮灌时间：{{irrigateProgram.rotationIrrigation}}小时
         <el-form ref="irrigateProgram" :model="irrigateProgram" label-width="100px">
           <el-form-item label="轮灌周期">
-            <el-input v-model="irrigateProgram.period"></el-input>
+            <el-input-number v-model="irrigateProgram.period" :precision="1" :step="0.5" :min="1" :max="14" label="轮灌周期"></el-input-number>
           </el-form-item>
-          <el-form-item label="日工作时间">
-            <el-input v-model="irrigateProgram.dailyWorkingHours"></el-input>
-          </el-form-item>
-          <el-form-item label="轮灌时间">
-            <el-input v-model="irrigateProgram.rotationIrrigation"></el-input>
+          <el-form-item label="工作时段">
+            <el-time-picker
+              is-range
+              v-model="irrigateProgram.dailyWorkingTime1"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              placeholder="选择时间范围">
+            </el-time-picker>
+            <el-time-picker
+              is-range
+              arrow-control
+              v-model="irrigateProgram.dailyWorkingTime2"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              placeholder="选择时间范围">
+            </el-time-picker>
           </el-form-item>
           <el-form-item>
             <el-button>取消</el-button>
@@ -128,6 +139,13 @@
       </el-tab-pane>
       <el-tab-pane label="施肥制度">
         <el-form ref="fertilizeProgram" :model="fertilizeProgram" label-width="100px">
+          <el-form-item label="施肥方式">
+            <el-radio-group v-model="fertilizeProgram.type">
+              <el-radio :label="0">仅灌溉</el-radio>
+              <el-radio :label="1">定量施肥</el-radio>
+              <el-radio :label="2">定比施肥</el-radio>
+            </el-radio-group>
+          </el-form-item>
           <el-form-item label="施肥周期">
             <el-input v-model="fertilizeProgram.period"></el-input>
           </el-form-item>
@@ -262,13 +280,17 @@
             </el-row>
           </el-card>
         </el-row>
-        <!-- <el-row>
+        <el-row>
           <el-card class="communication-setting">
             <div slot="header">
-              <span>网络设置</span>
+              <span>灌溉系统参数</span>
             </div>
+            <el-form :model="">
+              <el-form-item label=""></el-form-item>
+            </el-form>
+            <el-input-number v-model="num" :precision="1" :step="0.1"></el-input-number>
           </el-card>
-        </el-row> -->
+        </el-row>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -318,6 +340,7 @@ export default {
       areaEditDialogVisible: false,
       irrigateProgram: { period: 7, dailyWorkingHours: 8, rotationIrrigation: 1 },
       fertilizeProgram: {
+        type: 0,
         period: 7,
         rotationIrrigation: 1,
         channelNum: 0,
@@ -425,7 +448,6 @@ export default {
     handleNodeAdd() {
       this.$refs.nodeTable.insertAt({}, -1);
     },
-
     handleAreaEdit(row) {
       this.areaEditDialogVisible = true;
       this.areaEdit = row;
@@ -456,7 +478,6 @@ export default {
     handleAreaAdd() {
       this.$refs.areaTable.insertAt({}, -1);
     },
-
     handleUserEdit(row) {
       this.userEditDialogVisible = true;
       this.userEdit = row;
@@ -520,8 +541,6 @@ export default {
     this.$db.area.find({}).sort({ id: 1 }).exec((err, docs) => {
       this.areas = docs;
     });
-  },
-  beforeDestroy() {
   },
 };
 
