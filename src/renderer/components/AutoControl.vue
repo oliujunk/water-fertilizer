@@ -8,7 +8,10 @@
             <div v-if="carListLength != 0">
               <div class="car" v-for="(item,index) in carList" :key="index">
                 <div class="carContent" :class="{carContentHover:!autoMode}">
-                  <div class="carName" :class="{ carStyGreen: index < runStep, carStyYellowgreen: index == runStep,carStyYello: index > runStep}">{{item.name}} ({{index+1}})</div>
+                  <div
+                    class="carName"
+                    :class="{ carStyGreen: index < runStep, carStyYellowgreen: index == runStep,carStyYello: index > runStep}"
+                  >{{item.name}} ({{index+1}})</div>
                   <div class="carDelect carHover" @click="onCarDelect(index)">
                     <i class="el-icon-remove"></i>
                   </div>
@@ -194,7 +197,7 @@ export default {
   name: "autoControl",
   data() {
     return {
-      mainHeight: { height: `${window.innerHeight - 65}px` },
+      mainHeight: { height: `${window.innerHeight - 80}px` },
       ferRelayList: [
         {
           name: "施肥阀1",
@@ -405,7 +408,7 @@ export default {
 }
 
 .carStyYello {
-  background-color: yellow;
+  background-color: #ffc000;
 }
 
 .carStyGreen {

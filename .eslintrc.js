@@ -33,5 +33,8 @@ module.exports = {
     'arrow-parens': 0,
     'consistent-return': 0,
     'no-mixed-operators': 0,
+    'no-underscore-dangle': 0,
+    'no-bitwise': 0,
+    'no-plusplus': 0,
   }
 }
