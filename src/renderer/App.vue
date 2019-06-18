@@ -5,16 +5,16 @@
 </template>
 
 <script>
-  export default {
-    name: 'water-fertilizer',
-  };
+export default {
+  name: "water-fertilizer",
+  mounted() {
+    console.log("111");
+  },
+  beforeDestroy() {
+    console.log("222");
+  }
+};
 </script>
 
 <style>
-  /* CSS */
-  html,body,#app{
-
-  height: 100%;
-
-  }
 </style>

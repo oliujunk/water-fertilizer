@@ -84,10 +84,10 @@
 </template>
 
 <script>
-import moment from 'moment';
-const SerialPort = require('serialport');
-const InterByteTimeout = require('@serialport/parser-inter-byte-timeout');
-const schedule = require('node-schedule');
+import moment from "moment";
+const SerialPort = require("serialport");
+const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
+const schedule = require("node-schedule");
 
 export default {
   name: "setting",
@@ -101,14 +101,14 @@ export default {
       parity: "none",
       stopBits: 1,
       serialPort: null,
-      schedules: {},
+      schedules: {}
     };
   },
 
   methods: {
     handleSave() {
       if (this.serialPort) {
-        this.serialPort.close((err) => {
+        this.serialPort.close(err => {
           if (err) {
             this.$message.error(`关闭串口${this.serialPort.path}失败！`);
           }
@@ -120,23 +120,27 @@ export default {
         dataBits: this.dataBits,
         parity: this.parity,
         stopBits: this.stopBits,
-        autoOpen: false,
+        autoOpen: false
       });
-      serialPort.open((err) => {
+      serialPort.open(err => {
         if (err) {
-          this.$message.error(`打开串口${this.portName}失败！请检查该串口是否被占用。`);
+          this.$message.error(
+            `打开串口${this.portName}失败！请检查该串口是否被占用。`
+          );
         } else {
-          const parser = serialPort.pipe(new InterByteTimeout({ interval: 50 }));
-          parser.on('data', () => {});
-          const job1 = schedule.scheduleJob('*/5 * * * * *', () => {
+          const parser = serialPort.pipe(
+            new InterByteTimeout({ interval: 50 })
+          );
+          parser.on("data", () => {});
+          const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
             console.log(new Date());
             const send = Buffer.alloc(6);
             send[0] = 0x01;
             send[1] = 0x03;
             send[2] = 0x00;
             send[3] = 0x00;
-            send[4] = 0xF1;
-            send[5] = 0xD8;
+            send[4] = 0xf1;
+            send[5] = 0xd8;
             serialPort.write(send);
             console.log(job1);
           });
@@ -145,7 +149,7 @@ export default {
       });
       this.serialPort = serialPort;
       console.log(serialPort);
-    },
+    }
   },
 
   mounted() {
@@ -173,9 +177,9 @@ export default {
       parity: this.parity,
       stopBits: this.stopBits,
       schedules: this.schedules,
-      dataTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
+      dataTime: moment(new Date()).format("YYYY-MM-DD HH:mm:ss")
     });
-  },
+  }
 };
 </script>
 
