@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div>
     <el-tabs type="border-card">
       <el-tab-pane label="设备管理">
@@ -14,6 +14,7 @@
           :edit-config="{ key: 'addr', trigger: 'manual', mode: 'row', autoClear: false }"
         >
           <vxe-table-column type="index" width="60" label="序号"></vxe-table-column>
+
           <vxe-table-column prop="addr" width="150" label="地址" sortable :edit-render="{name: 'default'}">
             <template v-slot:edit="{ row }">
               <el-input-number v-model="row.addr" :max="254" :min="1" size="mini"></el-input-number>
@@ -161,8 +162,8 @@
               range-separator="至"
               start-placeholder="开始时间"
               end-placeholder="结束时间"
-              placeholder="选择时间范围">
-            </el-time-picker>
+              placeholder="选择时间范围"
+            ></el-time-picker>
             <el-time-picker
               is-range
               arrow-control
@@ -170,8 +171,8 @@
               range-separator="至"
               start-placeholder="开始时间"
               end-placeholder="结束时间"
-              placeholder="选择时间范围">
-            </el-time-picker>
+              placeholder="选择时间范围"
+            ></el-time-picker>
           </el-form-item>
           <el-form-item>
             <el-button>取消</el-button>
@@ -292,12 +293,7 @@
                   ></el-option>
                 </el-select>
                 <el-select v-model="portProperty.dataBits" placeholder="数据位" size="small">
-                  <el-option
-                    v-for="item in [8, 7, 6, 5]"
-                    :key="item"
-                    :value="item"
-                    :label="item"
-                  ></el-option>
+                  <el-option v-for="item in [8, 7, 6, 5]" :key="item" :value="item" :label="item"></el-option>
                 </el-select>
                 <el-select v-model="portProperty.parity" placeholder="校验位" size="small">
                   <el-option
@@ -308,16 +304,14 @@
                   ></el-option>
                 </el-select>
                 <el-select v-model="portProperty.stopBits" placeholder="停止位" size="small">
-                  <el-option
-                    v-for="item in [1, 2]"
-                    :key="item"
-                    :value="item"
-                    :label="item"
-                  ></el-option>
+                  <el-option v-for="item in [1, 2]" :key="item" :value="item" :label="item"></el-option>
                 </el-select>
-                <el-button :type="portButtonType" size="small" @click="handlePortOpen" round>
-                  {{portButtonText}}
-                </el-button>
+                <el-button
+                  :type="portButtonType"
+                  size="small"
+                  @click="handlePortOpen"
+                  round
+                >{{portButtonText}}</el-button>
               </el-col>
             </el-row>
           </el-card>
@@ -348,7 +342,6 @@ const { ipcRenderer } = require('electron');
 const SerialPort = require("serialport");
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 const schedule = require("node-schedule");
-
 export default {
   name: "Setting",
   data() {
@@ -429,13 +422,10 @@ export default {
           parity: this.portProperty.parity,
           stopBits: this.portProperty.stopBits,
           autoOpen: false
-        });
-
         ipcRenderer.on('serialPort', (event, arg) => {
           console.log(arg); // prints "pong"
         });
         ipcRenderer.send('serialPort', serialPort);
-
         serialPort.open(err => {
           if (err) {
             this.$message.error(
@@ -538,11 +528,11 @@ export default {
       this.areaEditDialogVisible = false;
       this.areaEdit.node = this.transferNodes.map((item) => this.nodes.find((node) => node.addr === item));
       this.areas.splice(
+
         this.areas.findIndex(area => area.id === this.areaEdit.id),
         1,
         JSON.parse(JSON.stringify(this.areaEdit))
       );
-
       this.$db.area.remove({}, { multi: true });
       setTimeout(() => {
         this.$db.area.insert(this.areas);
@@ -604,7 +594,6 @@ export default {
         1,
         JSON.parse(JSON.stringify(this.userEdit))
       );
-
       this.$db.user.remove({}, { multi: true });
       setTimeout(() => {
         this.$db.user.insert(this.users);
@@ -616,7 +605,6 @@ export default {
       this.userAdd.createAt = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
       this.userAdd.modifyAt = moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
       this.users.push(JSON.parse(JSON.stringify(this.userAdd)));
-
       this.$db.user.remove({}, { multi: true });
       setTimeout(() => {
         this.$db.user.insert(this.users);
@@ -643,7 +631,6 @@ export default {
       });
     }
   },
-
   mounted() {
     this.$db.config.loadDatabase();
     this.$db.user.loadDatabase();
@@ -653,7 +640,6 @@ export default {
       this.portList = [...ports];
       this.portProperty.name = ports[0].comName;
     });
-
     this.$db.user.find({}, (err, docs) => {
       this.users = docs;
     });
@@ -688,7 +674,6 @@ export default {
     margin-bottom: 0;
   }
 }
-
 .communication-setting {
   .el-row {
     height: 40px;
@@ -697,7 +682,6 @@ export default {
     width: 100px;
   }
 }
-
 .system-manage {
   .table-append {
     display: flex;

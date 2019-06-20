@@ -8,7 +8,10 @@
             <div v-if="carListLength != 0">
               <div class="car" v-for="(item,index) in carList" :key="index">
                 <div class="carContent" :class="{carContentHover:!autoMode}">
-                  <div class="carName">{{item.name}} ({{index+1}})</div>
+                  <div
+                    class="carName"
+                    :class="{ carStyGreen: index < runStep, carStyYellowgreen: index == runStep,carStyYello: index > runStep}"
+                  >{{item.name}} ({{index+1}})</div>
                   <div class="carDelect carHover" @click="onCarDelect(index)">
                     <i class="el-icon-remove"></i>
                   </div>
@@ -48,25 +51,29 @@
               </div>
 
               <div class="ferSelectItem">
-                <div class="paramTitle">灌溉日时间:</div>
-                <el-input
+                <div class="paramTitle">时间段1:</div>
+                <el-time-picker
                   :disabled="autoMode"
-                  v-model="IrrManagementParam.dayTime"
-                  placeholder="请输入内容"
-                  class="paramInput"
-                ></el-input>
-                <div class="unit">小时</div>
+                  is-range
+                  v-model="IrrManagementParam.time1"
+                  range-separator="至"
+                  start-placeholder="开始时间"
+                  end-placeholder="结束时间"
+                  placeholder="选择时间范围"
+                ></el-time-picker>
               </div>
 
               <div class="ferSelectItem">
-                <div class="paramTitle">轮灌时间:</div>
-                <el-input
-                  v-model="IrrManagementParam.time"
-                  placeholder="请输入内容"
-                  class="paramInput"
+                <div class="paramTitle">时间段2:</div>
+                <el-time-picker
                   :disabled="autoMode"
-                ></el-input>
-                <div class="unit">小时</div>
+                  is-range
+                  v-model="IrrManagementParam.time2"
+                  range-separator="至"
+                  start-placeholder="开始时间"
+                  end-placeholder="结束时间"
+                  placeholder="选择时间范围"
+                ></el-time-picker>
               </div>
 
               <div class="sideConfirm">
@@ -75,13 +82,21 @@
             </div>
             <div class="control">
               <el-switch v-model="autoMode" active-text="默认参数" inactive-text="自定义参数"></el-switch>
-              <el-button type="primary">确认运行</el-button>
+              <el-button type="primary" @click="onConfirm()">{{runState?'停止运行':'确认运行'}}</el-button>
             </div>
           </div>
         </div>
       </el-main>
-      <el-aside width="400px">
+      <el-aside width="380px">
         <div class="side">
+          <div class="sideMode">
+            <div class="sideTitle">模式:</div>
+            <el-radio-group v-model="ferModeRadio">
+              <el-radio :label="0">无施肥</el-radio>
+              <el-radio :label="1">肥料比</el-radio>
+              <el-radio :label="2">施肥量</el-radio>
+            </el-radio-group>
+          </div>
           <div class="ferManagement">
             <div class="sideTitle">施肥制度</div>
             <div class="sideName">
@@ -115,19 +130,12 @@
               </div>
               <div class="ferSelectItem">
                 <div class="paramTitle">肥料配比:</div>
-                <el-select
-                  :disabled="autoMode"
+                <el-input
                   v-model="ferSelectParam.concentration"
-                  placeholder="请选择"
+                  placeholder="请输入内容"
                   class="paramInput"
-                >
-                  <el-option
-                    v-for="item in concentrationOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  ></el-option>
-                </el-select>
+                  :disabled="autoMode"
+                ></el-input>
                 <div class="unit"></div>
               </div>
 
@@ -185,14 +193,23 @@
 </template>
 
 <script>
+import { xph } from "../xphDevice";
+
+let carBuf = [];
+let runParam = {
+  carList: {},
+  ferParam: {},
+  ferModeRadio: 0,
+  IrrManagementParam: {}
+};
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ipcRenderer } = require('electron');
 export default {
   name: "autoControl",
-
   data() {
     return {
-      mainHeight: { height: `${window.innerHeight - 65}px` },
+      mainHeight: { height: `${window.innerHeight - 80}px` },
       ferRelayList: [
         {
           name: "施肥阀1",
@@ -257,25 +274,12 @@ export default {
           label: "钾肥"
         }
       ],
-      concentrationOptions: [
-        {
-          value: "选项1",
-          label: "1/30"
-        },
-        {
-          value: "选项2",
-          label: "1/100"
-        }
-      ],
-
       IrrManagementParam: {
         cycle: "31",
-        dayTime: "32",
-        time: "33"
+        time1: [new Date(), new Date()],
+        time2: [new Date(), new Date()]
       },
-
       autoMode: true,
-
       carList: [{ name: "盖伦" }, { name: "洛克萨斯" }],
       carListLength: 2,
       carCurrent: "",
@@ -285,8 +289,30 @@ export default {
         { name: "皇子", id: "0" },
         { name: "瞎子", id: "1" },
         { name: "蜘蛛", id: "2" }
-      ]
+      ],
+      ferModeRadio: 0,
+      runStep: 1,
+      runState: false
     };
+  },
+  mounted() {
+    // 获取卡片数据;
+    this.$db.area.loadDatabase();
+    this.$db.area
+      .find({})
+      .sort({ id: 1 })
+      .exec((err, docs) => {
+        carBuf = docs;
+        this.carList = carBuf;
+        this.areaList = [];
+
+        runParam.carList = JSON.parse(JSON.stringify(this.carList));
+        // console.log(this.carList);
+      });
+    // 获取施肥数据
+    // 获取灌溉数据
+    // xph.taskStart();
+    // xph.taskStop();
   },
   methods: {
     onSideItem(index) {
@@ -297,14 +323,17 @@ export default {
     },
     onSideConfirm() {
       this.ferRelayList[this.ferRelayCurrent].param = this.ferSelectParam;
+      runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
       const h = this.$createElement;
-
       this.$notify({
         title: "标题名称",
         message: h("i", { style: "color: teal" }, "施肥参数修改成功")
       });
     },
     onIrrConfirm() {
+      runParam.IrrManagementParam = JSON.parse(
+        JSON.stringify(this.IrrManagementParam)
+      );
       const h = this.$createElement;
       this.$notify({
         title: "标题名称",
@@ -316,7 +345,7 @@ export default {
       this.dialogTableVisible = true;
     },
     onCarDelect(index) {
-      this.carList.splice(index, 1);
+      this.areaList.push(this.carList.splice(index, 1)[0]);
       this.carListLength = this.carList.length;
     },
     onDialogConfirm() {
@@ -324,12 +353,21 @@ export default {
         this.carList.splice(
           this.carCurrent + 1,
           0,
-          this.areaList[this.dialogValue]
+          this.areaList.splice(this.dialogValue, 1)[0]
         );
-
         this.carListLength = this.carList.length;
         this.dialogValue = "";
         this.dialogTableVisible = false;
+      }
+    },
+    onConfirm() {
+      if (this.runState) {
+        // 当前状态正在运行点击则是停止
+        this.runState = !this.runState;
+        xph.taskStop();
+      } else {
+        console.log(xph.taskStart());
+        this.runState = !this.runState;
       }
     }
   },
@@ -348,21 +386,18 @@ export default {
   display: flex;
   flex-flow: column nowrap;
 }
-
 .el-aside {
   background-color: #d3dce6;
   color: #333;
   text-align: center;
   line-height: 200px;
 }
-
 .el-main {
   background-color: #e9eef3;
   color: #333;
   text-align: center;
   line-height: 160px;
 }
-
 /* 主内容区 */
 .mainContent {
   display: flex;
@@ -371,13 +406,12 @@ export default {
   min-height: 100%;
   background-color: #b3c0d1;
 }
-
 .mainTop > div {
   display: flex;
   flex-flow: row wrap;
   justify-content: flex-start;
 }
-
+/* 轮灌区 */
 .car {
   display: flex;
   flex-flow: row nowrap;
@@ -385,7 +419,6 @@ export default {
   height: 60px;
   padding: 10px 0;
 }
-
 .carContent {
   display: block;
   position: relative;
@@ -394,14 +427,12 @@ export default {
   height: 40px;
   line-height: 40px;
 }
-
 .carName {
   padding: 0 5px;
   background-color: #409eff;
   color: #ffffff;
   border-radius: 5px;
 }
-
 .carDelect {
   display: none;
   position: absolute;
@@ -410,7 +441,6 @@ export default {
   font-size: 24px;
   color: #f56c6c;
 }
-
 .carAdd {
   display: none;
   position: absolute;
@@ -419,16 +449,26 @@ export default {
   font-size: 24px;
   color: #67c23a;
 }
-
 .carContentHover:hover .carHover {
   display: block;
   cursor: pointer;
 }
-
 .carLine {
   height: 40px;
   line-height: 40px;
   font-size: 24px;
+}
+
+.carStyYello {
+  background-color: #ffc000;
+}
+
+.carStyGreen {
+  background-color: green;
+}
+
+.carStyYellowgreen {
+  background-color: yellowgreen;
 }
 
 .mainBottom {
@@ -436,16 +476,18 @@ export default {
   flex-flow: row nowrap;
   justify-content: space-around;
 }
-
 .control {
   display: flex;
   flex-flow: column nowrap;
   justify-content: flex-start;
 }
-
 .control > .el-switch {
   margin-top: 20px;
   margin-bottom: 30px;
+}
+
+.control > .el-button {
+  margin: auto 20px;
 }
 
 /* 右侧侧边栏布局 */
@@ -456,18 +498,29 @@ export default {
   height: 100%;
   margin: auto 20px;
 }
-
+.sideMode {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  margin: 0 auto;
+}
+.sideMode .sideTitle {
+  font-size: 16px;
+  height: 24px;
+  line-height: 16px;
+  margin-right: 10px;
+}
 /* 灌溉管理 */
 .IrrManagement {
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
   height: 260px;
+  width: 380px;
   background-color: #e9eef3;
   margin-bottom: 20px;
   padding: 0 10px;
 }
-
 /* 施肥管理 */
 .ferManagement {
   display: flex;
@@ -477,7 +530,6 @@ export default {
   background-color: #e9eef3;
   padding: 0 10px;
 }
-
 .sideTitle {
   height: 36px;
   line-height: 36px;
@@ -486,41 +538,34 @@ export default {
   font-weight: 800;
   margin-bottom: 10px;
 }
-
 .sideName {
   display: flex;
   flex-flow: row nowrap;
   justify-content: space-around;
 }
-
 .sideItem {
   background-color: #409eff;
   display: flex;
   flex-flow: column nowrap;
   cursor: pointer;
 }
-
 .shuli {
   width: 20px;
   margin: 0 auto;
   line-height: 24px;
   font-size: 20px;
   word-wrap: break-word; /*英文的时候需要加上这句，自动换行*/
-
   margin: 10px;
 }
-
 .sideItem .bottom {
   width: 40px;
   margin: 0 auto;
   height: 8px;
   background-color: #d3dce6;
 }
-
 .sideItem .current {
   background-color: #409eff;
 }
-
 .ferSelectItem {
   display: flex;
   flex-flow: row nowrap;
@@ -528,7 +573,6 @@ export default {
   background-color: #409eff;
   height: 50px;
 }
-
 .ferSelectItem .paramTitle {
   display: inline-block;
   height: 50px;
@@ -537,19 +581,23 @@ export default {
   width: 74px;
   text-align: center;
 }
-
 .ferSelectItem > .paramInput {
   display: inline-block;
   height: 50px;
   line-height: 50px;
   width: 180px;
 }
-
 .ferSelectItem .unit {
   display: inline-block;
   height: 50px;
   line-height: 50px;
   width: 50px;
+}
+
+.ferSelectItem .el-select {
+  height: 40px;
+  line-height: 40px;
+  margin-top: 5px;
 }
 
 .sideConfirm {

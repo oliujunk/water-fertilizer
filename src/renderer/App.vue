@@ -5,9 +5,16 @@
 </template>
 
 <script>
-  export default {
-    name: 'water-fertilizer',
-  };
+import { xph } from "./xphDevice";
+
+export default {
+  name: "water-fertilizer",
+  mounted() {
+    xph.init();
+    xph.print();
+  },
+  beforeDestroy() {}
+};
 </script>
 
 <style>
