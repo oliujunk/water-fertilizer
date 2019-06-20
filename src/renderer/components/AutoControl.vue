@@ -196,13 +196,15 @@
 import { xph } from "../xphDevice";
 
 let carBuf = [];
-let runParam = {
+const runParam = {
   carList: {},
   ferParam: {},
   ferModeRadio: 0,
   IrrManagementParam: {}
 };
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { ipcRenderer } = require('electron');
 export default {
   name: "autoControl",
   data() {
@@ -385,7 +387,13 @@ export default {
         }
       }
     }
-  }
+  },
+  mounted() {
+    ipcRenderer.send('getSerialPort');
+    ipcRenderer.on('getSerialPort', (event, arg) => {
+      console.log(arg);
+    });
+  },
 };
 </script>
 

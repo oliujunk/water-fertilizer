@@ -38,5 +38,6 @@ module.exports = {
     'no-plusplus': 0,
     'no-tabs': 0,
     'no-unused-vars': 0,
+    'max-len': ['error', 200],
   }
 }
