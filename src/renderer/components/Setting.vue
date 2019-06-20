@@ -210,38 +210,58 @@
               <el-radio :label="2">定比施肥</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="施肥周期">
-            <el-input v-model="config.fertilizeProgram.period"></el-input>
-          </el-form-item>
-          <el-form-item label="施肥时间">
-            <el-input v-model="config.fertilizeProgram.rotationIrrigation"></el-input>
-          </el-form-item>
           <el-form-item label="施肥通道">
             <el-select v-model="config.fertilizeProgram.channelNum">
               <el-option
-                v-for="(item, index) in config.fertilizeProgram.channel"
+                v-for="(item, index) in channel"
                 :key="index"
-                :label="item.name"
+                :label="item"
+                :value="index"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="施肥周期">
+            <el-input-number
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].period"
+              :max="100"
+              :min="1"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="施肥时间">
+            <el-input-number
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].rotationIrrigation"
+              :max="100"
+              :min="1"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="施肥类型">
+            <el-select v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].type">
+              <el-option
+                v-for="(item, index) in fertilizerType"
+                :key="index"
+                :label="item"
                 :value="index"
               ></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="施肥量">
-            <el-input
-              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].fertilizingAmount"
-            ></el-input>
+            <el-input-number
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].amount"
+              :max="500"
+              :min="1"
+            ></el-input-number>
           </el-form-item>
           <el-form-item label="肥水比">
-            <el-select
-              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].proportion"
-            >
-              <el-option
-                v-for="(item, index) in ['1/2', '1/3', '1/5', '1/10']"
-                :key="index"
-                :label="item"
-                :value="item"
-              ></el-option>
-            </el-select>
+            <el-input-number
+              value="1"
+              disabled
+            ></el-input-number>
+            :
+            <el-input-number
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].scale"
+              :min="1"
+              :max="500"
+            ></el-input-number>
           </el-form-item>
           <el-form-item>
             <el-button>取消</el-button>
@@ -382,6 +402,8 @@ export default {
   data() {
     return {
       nodeType: ["有线阀控器", "无线阀控器", "有线传感器", "无线传感器"],
+      channel: ["通道1", "通道2", "通道3", "通道4"],
+      fertilizerType: ["氮肥", "钾肥", "磷肥", "氨肥"],
       portList: [],
       portProperty: {
         name: "",
@@ -414,14 +436,36 @@ export default {
         },
         fertilizeProgram: {
           type: 0,
-          period: 7,
-          rotationIrrigation: 1,
           channelNum: 0,
           channel: [
-            { name: "氮肥", fertilizingAmount: 30, proportion: "1/3" },
-            { name: "氨肥", fertilizingAmount: 40, proportion: "1/2" },
-            { name: "钾肥", fertilizingAmount: 50, proportion: "1/5" },
-            { name: "磷肥", fertilizingAmount: 60, proportion: "1/10" }
+            {
+              period: 7, // 施肥周期
+              rotationIrrigation: 1, // 施肥时间
+              type: 0, // 施肥类型
+              amount: 10, // 施肥量
+              scale: 100 // 肥水比 分子默认为1
+            },
+            {
+              period: 6, // 施肥周期
+              rotationIrrigation: 2, // 施肥时间
+              type: 1, // 施肥类型
+              amount: 20, // 施肥量
+              scale: 50 // 肥水比 分子默认为1
+            },
+            {
+              period: 8, // 施肥周期
+              rotationIrrigation: 1, // 施肥时间
+              type: 3, // 施肥类型
+              amount: 10, // 施肥量
+              scale: 70 // 肥水比 分子默认为1
+            },
+            {
+              period: 9, // 施肥周期
+              rotationIrrigation: 4, // 施肥时间
+              type: 3, // 施肥类型
+              amount: 20, // 施肥量
+              scale: 60 // 肥水比 分子默认为1
+            }
           ]
         }
       },
