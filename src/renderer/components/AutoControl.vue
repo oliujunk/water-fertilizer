@@ -82,7 +82,7 @@
             </div>
             <div class="control">
               <el-switch v-model="autoMode" active-text="默认参数" inactive-text="自定义参数"></el-switch>
-              <el-button type="primary">确认运行</el-button>
+              <el-button type="primary" @click="onConfirm()">{{runState?'停止运行':'确认运行'}}</el-button>
             </div>
           </div>
         </div>
@@ -196,6 +196,12 @@
 import { xph } from "../xphDevice";
 
 let carBuf = [];
+let runParam = {
+  carList: {},
+  ferParam: {},
+  ferModeRadio: 0,
+  IrrManagementParam: {}
+};
 
 export default {
   name: "autoControl",
@@ -283,11 +289,12 @@ export default {
         { name: "蜘蛛", id: "2" }
       ],
       ferModeRadio: 0,
-      runStep: 1
+      runStep: 1,
+      runState: false
     };
   },
   mounted() {
-    // 获取卡片数据
+    // 获取卡片数据;
     this.$db.area.loadDatabase();
     this.$db.area
       .find({})
@@ -296,13 +303,12 @@ export default {
         carBuf = docs;
         this.carList = carBuf;
         this.areaList = [];
-        console.log(this.carList);
+
+        runParam.carList = JSON.parse(JSON.stringify(this.carList));
+        // console.log(this.carList);
       });
-
     // 获取施肥数据
-
     // 获取灌溉数据
-
     // xph.taskStart();
     // xph.taskStop();
   },
@@ -315,6 +321,7 @@ export default {
     },
     onSideConfirm() {
       this.ferRelayList[this.ferRelayCurrent].param = this.ferSelectParam;
+      runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
       const h = this.$createElement;
       this.$notify({
         title: "标题名称",
@@ -322,6 +329,9 @@ export default {
       });
     },
     onIrrConfirm() {
+      runParam.IrrManagementParam = JSON.parse(
+        JSON.stringify(this.IrrManagementParam)
+      );
       const h = this.$createElement;
       this.$notify({
         title: "标题名称",
@@ -333,7 +343,7 @@ export default {
       this.dialogTableVisible = true;
     },
     onCarDelect(index) {
-      this.carList.splice(index, 1);
+      this.areaList.push(this.carList.splice(index, 1)[0]);
       this.carListLength = this.carList.length;
     },
     onDialogConfirm() {
@@ -341,11 +351,21 @@ export default {
         this.carList.splice(
           this.carCurrent + 1,
           0,
-          this.areaList[this.dialogValue]
+          this.areaList.splice(this.dialogValue, 1)[0]
         );
         this.carListLength = this.carList.length;
         this.dialogValue = "";
         this.dialogTableVisible = false;
+      }
+    },
+    onConfirm() {
+      if (this.runState) {
+        // 当前状态正在运行点击则是停止
+        this.runState = !this.runState;
+        xph.taskStop();
+      } else {
+        console.log(xph.taskStart());
+        this.runState = !this.runState;
       }
     }
   }

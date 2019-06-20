@@ -12,6 +12,9 @@ class xphClass {
     runDayNum = 0;
     runState = '串口未初始化';
 
+    // 传感器数据
+    sensorData = new Array(17);
+
     // 时间段定时器句柄
     taskHandle = '';
     timeOutOnHandle = ['', ''];
@@ -204,7 +207,10 @@ class xphClass {
                 }
                 break;
             case 2: // 施肥量
-                // this.ferLiuliang = xxx
+                for (let index = 0; index < this.ferParam.length; index++) {
+                    this.ferParam[index].concentration = '1/1';
+                }
+                this.ferRatio();
                 for (let index = 0; index < array.length; index++) {
                     this.localRelay(index, 1);
                 }
@@ -329,7 +335,7 @@ class xphClass {
 
     // 停止运行逻辑运行
     taskStop() {
-        this.runState = '串口已初始化';
+
 
         // 关闭所有定时器
         for (const item of this.timeOutOnHandle) {
