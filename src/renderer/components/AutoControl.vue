@@ -193,6 +193,10 @@
 </template>
 
 <script>
+import { xph } from "../xphDevice";
+
+let carBuf = [];
+
 export default {
   name: "autoControl",
   data() {
@@ -281,6 +285,26 @@ export default {
       ferModeRadio: 0,
       runStep: 1
     };
+  },
+  mounted() {
+    // 获取卡片数据
+    this.$db.area.loadDatabase();
+    this.$db.area
+      .find({})
+      .sort({ id: 1 })
+      .exec((err, docs) => {
+        carBuf = docs;
+        this.carList = carBuf;
+        this.areaList = [];
+        console.log(this.carList);
+      });
+
+    // 获取施肥数据
+
+    // 获取灌溉数据
+
+    // xph.taskStart();
+    // xph.taskStop();
   },
   methods: {
     onSideItem(index) {

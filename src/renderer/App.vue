@@ -5,14 +5,15 @@
 </template>
 
 <script>
+import { xph } from "./xphDevice";
+
 export default {
   name: "water-fertilizer",
   mounted() {
-    console.log("111");
+    xph.init();
+    xph.print();
   },
-  beforeDestroy() {
-    console.log("222");
-  }
+  beforeDestroy() {}
 };
 </script>
 
