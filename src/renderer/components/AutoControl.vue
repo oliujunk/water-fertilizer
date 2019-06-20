@@ -203,6 +203,8 @@ let runParam = {
   IrrManagementParam: {}
 };
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { ipcRenderer } = require('electron');
 export default {
   name: "autoControl",
   data() {
@@ -368,7 +370,13 @@ export default {
         this.runState = !this.runState;
       }
     }
-  }
+  },
+  mounted() {
+    ipcRenderer.send('getSerialPort');
+    ipcRenderer.on('getSerialPort', (event, arg) => {
+      console.log(arg);
+    });
+  },
 };
 </script>
 

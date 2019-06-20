@@ -11,33 +11,23 @@
           border
           height="540"
           auto-resize
-          :edit-config="{ trigger: 'manual', mode: 'row', autoClear: false }"
+          :edit-config="{ key: 'addr', trigger: 'manual', mode: 'row', autoClear: false }"
         >
           <vxe-table-column type="index" width="60" label="序号"></vxe-table-column>
-          <vxe-table-column
-            prop="key"
-            width="150"
-            label="地址"
-            sortable
-            :edit-render="{name: 'default'}"
-          >
+
+          <vxe-table-column prop="addr" width="150" label="地址" sortable :edit-render="{name: 'default'}">
             <template v-slot:edit="{ row }">
-              <el-input-number v-model="row.key" :max="254" :min="1" size="mini"></el-input-number>
+              <el-input-number v-model="row.addr" :max="254" :min="1" size="mini"></el-input-number>
             </template>
           </vxe-table-column>
-          <vxe-table-column prop="type" width="200" label="类型" :edit-render="{name: 'default'}">
+          <vxe-table-column prop="type" width="200" label="类型" :formatter="formatNodeType" :edit-render="{name: 'default'}">
             <template v-slot:edit="{ row }">
               <el-select v-model="row.type" size="mini">
-                <el-option
-                  v-for="(item, index) in ['有线阀控器', '无线阀控器', '有线传感器', '无线传感器']"
-                  :key="index"
-                  :label="item"
-                  :value="item"
-                ></el-option>
+                <el-option v-for="(item, index) in nodeType" :key="index" :label="item" :value="index"></el-option>
               </el-select>
             </template>
           </vxe-table-column>
-          <vxe-table-column prop="label" label="名称" :edit-render="{name: 'input'}"></vxe-table-column>
+          <vxe-table-column prop="name" label="名称" :edit-render="{name: 'input'}"></vxe-table-column>
           <vxe-table-column label="操作" width="200">
             <template v-slot="{ row }">
               <template v-if="$refs.nodeTable.hasActiveRow(row)">
@@ -54,6 +44,25 @@
         <div style="float: right; margin-top: 10px; margin-right: 92px;">
           <el-button type="primary" size="mini" @click="handleNodeAdd">添加</el-button>
         </div>
+        <el-dialog title="节点添加" :visible.sync="nodeAddDialogVisible" width="70%">
+          <el-form :model="nodeAdd">
+            <el-form-item label="节点地址" label-width="100px">
+              <el-input-number v-model="nodeAdd.addr" :max="254" :min="1"></el-input-number>
+            </el-form-item>
+            <el-form-item label="节点名称" label-width="100px">
+              <el-input v-model="nodeAdd.name"></el-input>
+            </el-form-item>
+            <el-form-item label="节点类型" label-width="100px">
+              <el-select v-model="nodeAdd.type">
+                <el-option v-for="(item, index) in nodeType" :key="index" :label="item" :value="index"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer" style="text-align: center;">
+            <el-button @click="handleNodeAddCancel">取 消</el-button>
+            <el-button type="primary" @click="handleNodeAddOk">确 定</el-button>
+          </div>
+        </el-dialog>
       </el-tab-pane>
       <el-tab-pane label="灌区管理">
         <vxe-table
@@ -65,7 +74,7 @@
           border
           height="540"
           auto-resize
-          :edit-config="{ trigger: 'manual', mode: 'row', autoClear: false }"
+          :edit-config="{ key: 'id', trigger: 'manual', mode: 'row', autoClear: false }"
         >
           <vxe-table-column type="index" width="60" label="序号"></vxe-table-column>
           <vxe-table-column prop="id" label="编号" sortable></vxe-table-column>
@@ -80,8 +89,8 @@
                 <el-dropdown-menu slot="dropdown">
                   <el-dropdown-item
                     v-for="item in row.node"
-                    :key="item"
-                  >{{nodes.find((node) => node.key === item) ? nodes.find((node) => node.key === item).label : ''}}</el-dropdown-item>
+                    :key="item.addr"
+                  >{{nodes.find((node) => node.addr === item.addr) ? nodes.find((node) => node.addr === item.addr).name : ''}}</el-dropdown-item>
                 </el-dropdown-menu>
               </el-dropdown>
             </template>
@@ -101,37 +110,55 @@
         <el-dialog title="灌区修改" :visible.sync="areaEditDialogVisible" width="70%">
           <el-form :model="areaEdit">
             <el-form-item label="灌区编号" label-width="100px">
-              <el-input-number v-model="areaEdit.id" :max="128" :min="1"></el-input-number>
+              <el-input-number v-model="areaEdit.id" :max="128" :min="1" disabled></el-input-number>
             </el-form-item>
             <el-form-item label="灌区名称" label-width="100px">
               <el-input v-model="areaEdit.name"></el-input>
             </el-form-item>
             <el-form-item label="节点选择" label-width="100px">
-              <el-transfer v-model="areaEdit.node" :data="nodes" :titles="['所有节点', '当前灌区节点']"></el-transfer>
+              <el-transfer
+                v-model="transferNodes"
+                :data="nodes"
+                :titles="['所有节点', '当前灌区节点']"
+              ></el-transfer>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer" style="text-align: center;">
-            <el-button @click="areaEditDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="handleAreaEditOk()">确 定</el-button>
+            <el-button @click="handleAreaEditCancel">取 消</el-button>
+            <el-button type="primary" @click="handleAreaEditOk">确 定</el-button>
+          </div>
+        </el-dialog>
+        <el-dialog title="灌区添加" :visible.sync="areaAddDialogVisible" width="70%">
+          <el-form :model="areaAdd">
+            <el-form-item label="灌区编号" label-width="100px">
+              <el-input-number v-model="areaAdd.id" :max="128" :min="1"></el-input-number>
+            </el-form-item>
+            <el-form-item label="灌区名称" label-width="100px">
+              <el-input v-model="areaAdd.name"></el-input>
+            </el-form-item>
+            <el-form-item label="节点选择" label-width="100px">
+              <el-transfer
+                v-model="transferNodes"
+                :data="nodes"
+                :titles="['所有节点', '当前灌区节点']"
+              ></el-transfer>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer" style="text-align: center;">
+            <el-button @click="handleAreaAddCancel">取 消</el-button>
+            <el-button type="primary" @click="handleAreaAddOk">确 定</el-button>
           </div>
         </el-dialog>
       </el-tab-pane>
       <el-tab-pane label="灌溉制度">
-        <el-form ref="irrigateProgram" :model="irrigateProgram" label-width="100px">
+        <el-form ref="irrigateProgram" :model="config.irrigateProgram" label-width="100px">
           <el-form-item label="轮灌周期">
-            <el-input-number
-              v-model="irrigateProgram.period"
-              :precision="1"
-              :step="0.5"
-              :min="1"
-              :max="14"
-              label="轮灌周期"
-            ></el-input-number>
+            <el-input-number v-model="config.irrigateProgram.period" :precision="1" :step="0.5" :min="1" :max="14" label="轮灌周期"></el-input-number>
           </el-form-item>
           <el-form-item label="工作时段">
             <el-time-picker
               is-range
-              v-model="irrigateProgram.dailyWorkingTime1"
+              v-model="config.irrigateProgram.dailyWorkingTime1"
               range-separator="至"
               start-placeholder="开始时间"
               end-placeholder="结束时间"
@@ -140,7 +167,7 @@
             <el-time-picker
               is-range
               arrow-control
-              v-model="irrigateProgram.dailyWorkingTime2"
+              v-model="config.irrigateProgram.dailyWorkingTime2"
               range-separator="至"
               start-placeholder="开始时间"
               end-placeholder="结束时间"
@@ -149,53 +176,41 @@
           </el-form-item>
           <el-form-item>
             <el-button>取消</el-button>
-            <el-button type="primary">更改</el-button>
+            <el-button type="primary" @click="handleIrrigateProgramChange">更改</el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>
       <el-tab-pane label="施肥制度">
-        <el-form ref="fertilizeProgram" :model="fertilizeProgram" label-width="100px">
+        <el-form ref="fertilizeProgram" :model="config.fertilizeProgram" label-width="100px">
           <el-form-item label="施肥方式">
-            <el-radio-group v-model="fertilizeProgram.type">
+            <el-radio-group v-model="config.fertilizeProgram.type">
               <el-radio :label="0">仅灌溉</el-radio>
               <el-radio :label="1">定量施肥</el-radio>
               <el-radio :label="2">定比施肥</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="施肥周期">
-            <el-input v-model="fertilizeProgram.period"></el-input>
+            <el-input v-model="config.fertilizeProgram.period"></el-input>
           </el-form-item>
           <el-form-item label="施肥时间">
-            <el-input v-model="fertilizeProgram.rotationIrrigation"></el-input>
+            <el-input v-model="config.fertilizeProgram.rotationIrrigation"></el-input>
           </el-form-item>
           <el-form-item label="施肥通道">
-            <el-select v-model="fertilizeProgram.channelNum">
-              <el-option
-                v-for="(item, index) in fertilizeProgram.channel"
-                :key="index"
-                :label="item.name"
-                :value="index"
-              ></el-option>
+            <el-select v-model="config.fertilizeProgram.channelNum">
+              <el-option v-for="(item, index) in config.fertilizeProgram.channel" :key="index" :label="item.name" :value="index"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="施肥量">
-            <el-input
-              v-model="fertilizeProgram.channel[fertilizeProgram.channelNum].fertilizingAmount"
-            ></el-input>
+            <el-input v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].fertilizingAmount"></el-input>
           </el-form-item>
           <el-form-item label="肥水比">
-            <el-select v-model="fertilizeProgram.channel[fertilizeProgram.channelNum].proportion">
-              <el-option
-                v-for="(item, index) in ['1/2', '1/3', '1/5', '1/10']"
-                :key="index"
-                :label="item"
-                :value="item"
-              ></el-option>
+            <el-select v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].proportion">
+              <el-option v-for="(item, index) in ['1/2', '1/3', '1/5', '1/10']" :key="index" :label="item" :value="item"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item>
             <el-button>取消</el-button>
-            <el-button type="primary">更改</el-button>
+            <el-button type="primary" @click="handleFertilizeProgramChange">更改</el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>
@@ -209,7 +224,7 @@
           border
           height="540"
           auto-resize
-          :edit-config="{ trigger: 'manual', mode: 'row', autoClear: false }"
+          :edit-config="{ key: 'username', trigger: 'manual', mode: 'row', autoClear: false }"
         >
           <vxe-table-column type="index" width="60" label="序号"></vxe-table-column>
           <vxe-table-column prop="username" width="200" label="用户名"></vxe-table-column>
@@ -235,7 +250,7 @@
           </el-form>
           <div slot="footer" class="dialog-footer" style="text-align: center;">
             <el-button @click="userEditDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="handleUserEditOk()">确 定</el-button>
+            <el-button type="primary" @click="handleUserEditOk">确 定</el-button>
           </div>
         </el-dialog>
         <el-dialog title="添加用户" :visible.sync="userAddDialogVisible" width="50%">
@@ -249,7 +264,7 @@
           </el-form>
           <div slot="footer" class="dialog-footer" style="text-align: center;">
             <el-button @click="userAddDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="handleUserAddOk()">确 定</el-button>
+            <el-button type="primary" @click="handleUserAddOk">确 定</el-button>
           </div>
         </el-dialog>
       </el-tab-pane>
@@ -306,9 +321,10 @@
             <div slot="header">
               <span>灌溉系统参数</span>
             </div>
-            <el-form>
-              <el-form-item label></el-form-item>
-            </el-form>
+            <!-- <el-form :model="">
+              <el-form-item label=""></el-form-item>
+            </el-form> -->
+            <!-- <el-input-number v-model="num" :precision="1" :step="0.1"></el-input-number> -->
           </el-card>
         </el-row>
       </el-tab-pane>
@@ -321,6 +337,8 @@ import moment from "moment";
 import md5 from "js-md5";
 import { setTimeout } from "timers";
 import { receiveDataProcess, sendFrameWithCrc } from "../communication";
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { ipcRenderer } = require('electron');
 const SerialPort = require("serialport");
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 const schedule = require("node-schedule");
@@ -328,6 +346,7 @@ export default {
   name: "Setting",
   data() {
     return {
+      nodeType: ["有线阀控器", "无线阀控器", "有线传感器", "无线传感器"],
       portList: [],
       portProperty: {
         name: "",
@@ -343,38 +362,33 @@ export default {
       portButtonStatus: false,
       systemParameterDialog: false,
       nodeManageDialog: false,
-      nodes: [
-        {
-          key: 1,
-          type: "无线控制器",
-          label: "节点1"
-        }
-      ],
-      areas: [
-        {
-          id: 1,
-          name: "灌区1",
-          node: [1, 2]
-        }
-      ],
+      nodes: [],
+      transferNodes: [],
+      nodeAddDialogVisible: false,
+      nodeAdd: {},
+      areas: [],
       areaEdit: {},
+      areaAdd: {},
       areaEditDialogVisible: false,
-      irrigateProgram: {
-        period: 7,
-        dailyWorkingHours: 8,
-        rotationIrrigation: 1
-      },
-      fertilizeProgram: {
-        type: 0,
-        period: 7,
-        rotationIrrigation: 1,
-        channelNum: 0,
-        channel: [
-          { name: "氮肥", fertilizingAmount: 30, proportion: "1/3" },
-          { name: "氨肥", fertilizingAmount: 40, proportion: "1/2" },
-          { name: "钾肥", fertilizingAmount: 50, proportion: "1/5" },
-          { name: "磷肥", fertilizingAmount: 60, proportion: "1/10" }
-        ]
+      areaAddDialogVisible: false,
+      config: {
+        irrigateProgram: {
+          period: 7,
+          dailyWorkingTime1: null,
+          dailyWorkingTime2: null,
+        },
+        fertilizeProgram: {
+          type: 0,
+          period: 7,
+          rotationIrrigation: 1,
+          channelNum: 0,
+          channel: [
+            { name: "氮肥", fertilizingAmount: 30, proportion: "1/3" },
+            { name: "氨肥", fertilizingAmount: 40, proportion: "1/2" },
+            { name: "钾肥", fertilizingAmount: 50, proportion: "1/5" },
+            { name: "磷肥", fertilizingAmount: 60, proportion: "1/10" }
+          ]
+        }
       },
       users: [],
       userEdit: {},
@@ -384,6 +398,9 @@ export default {
     };
   },
   methods: {
+    formatNodeType({ cellValue }) {
+      return this.nodeType[cellValue];
+    },
     handlePortOpen() {
       if (this.portButtonStatus) {
         this.serialPort.close(err => {
@@ -405,7 +422,10 @@ export default {
           parity: this.portProperty.parity,
           stopBits: this.portProperty.stopBits,
           autoOpen: false
+        ipcRenderer.on('serialPort', (event, arg) => {
+          console.log(arg); // prints "pong"
         });
+        ipcRenderer.send('serialPort', serialPort);
         serialPort.open(err => {
           if (err) {
             this.$message.error(
@@ -483,16 +503,33 @@ export default {
       }, 1000);
     },
     handleNodeAdd() {
-      this.$refs.nodeTable.insertAt({}, -1);
+      this.nodeAddDialogVisible = true;
+    },
+    handleNodeAddCancel() {
+      this.nodeAddDialogVisible = false;
+    },
+    handleNodeAddOk() {
+      this.nodeAddDialogVisible = false;
+      this.nodes.push(JSON.parse(JSON.stringify(this.nodeAdd)));
+      this.$db.node.remove({}, { multi: true });
+      setTimeout(() => {
+        this.$db.node.insert(this.nodes);
+      }, 500);
     },
     handleAreaEdit(row) {
       this.areaEditDialogVisible = true;
       this.areaEdit = row;
+      this.transferNodes = this.areaEdit.node.map(item => item.addr);
+    },
+    handleAreaEditCancel() {
+      this.areaEditDialogVisible = false;
     },
     handleAreaEditOk() {
       this.areaEditDialogVisible = false;
+      this.areaEdit.node = this.transferNodes.map((item) => this.nodes.find((node) => node.addr === item));
       this.areas.splice(
-        this.areas.findIndex(area => area._id === this.areaEdit._id),
+
+        this.areas.findIndex(area => area.id === this.areaEdit.id),
         1,
         JSON.parse(JSON.stringify(this.areaEdit))
       );
@@ -514,7 +551,22 @@ export default {
       }, 1000);
     },
     handleAreaAdd() {
-      this.$refs.areaTable.insertAt({}, -1);
+      this.areaAddDialogVisible = true;
+      this.areaAdd = {};
+      this.transferNodes = [];
+    },
+    handleAreaAddCancel() {
+      this.areaAddDialogVisible = false;
+      this.userAdd = {};
+    },
+    handleAreaAddOk() {
+      this.areaAddDialogVisible = false;
+      this.areaAdd.node = this.transferNodes.map((item) => this.nodes.find((node) => node.addr === item));
+      this.areas.push(JSON.parse(JSON.stringify(this.areaAdd)));
+      this.$db.area.remove({}, { multi: true });
+      setTimeout(() => {
+        this.$db.area.insert(this.areas);
+      }, 500);
     },
     handleUserEdit(row) {
       this.userEditDialogVisible = true;
@@ -557,10 +609,30 @@ export default {
       setTimeout(() => {
         this.$db.user.insert(this.users);
       }, 500);
+    },
+    handleIrrigateProgramChange() {
+      this.$db.config.remove({}, { multi: true });
+      setTimeout(() => {
+        this.$db.config.insert(this.config);
+      }, 500);
+      this.$message({
+        message: '修改成功',
+        type: 'success'
+      });
+    },
+    handleFertilizeProgramChange() {
+      this.$db.config.remove({}, { multi: true });
+      setTimeout(() => {
+        this.$db.config.insert(this.config);
+      }, 500);
+      this.$message({
+        message: '修改成功',
+        type: 'success'
+      });
     }
   },
   mounted() {
-    this.$db.settingPage.loadDatabase();
+    this.$db.config.loadDatabase();
     this.$db.user.loadDatabase();
     this.$db.node.loadDatabase();
     this.$db.area.loadDatabase();
@@ -573,9 +645,14 @@ export default {
     });
     this.$db.node
       .find({})
-      .sort({ key: 1 })
+      .sort({ addr: 1 })
       .exec((err, docs) => {
         this.nodes = docs;
+        this.nodes = this.nodes.map(item => {
+          item.key = item.addr;
+          item.label = item.name;
+          return item;
+        });
       });
     this.$db.area
       .find({})
@@ -583,6 +660,9 @@ export default {
       .exec((err, docs) => {
         this.areas = docs;
       });
+    this.$db.config.findOne({}, (err, doc) => {
+      this.config = doc;
+    });
   }
 };
 </script>
