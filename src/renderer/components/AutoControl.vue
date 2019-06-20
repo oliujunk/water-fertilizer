@@ -196,7 +196,7 @@
 import { xph } from "../xphDevice";
 
 let carBuf = [];
-let runParam = {
+const runParam = {
   carList: {},
   ferParam: {},
   ferModeRadio: 0,

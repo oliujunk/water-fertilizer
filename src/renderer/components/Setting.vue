@@ -15,15 +15,32 @@
         >
           <vxe-table-column type="index" width="60" label="序号"></vxe-table-column>
 
-          <vxe-table-column prop="addr" width="150" label="地址" sortable :edit-render="{name: 'default'}">
+          <vxe-table-column
+            prop="addr"
+            width="150"
+            label="地址"
+            sortable
+            :edit-render="{name: 'default'}"
+          >
             <template v-slot:edit="{ row }">
               <el-input-number v-model="row.addr" :max="254" :min="1" size="mini"></el-input-number>
             </template>
           </vxe-table-column>
-          <vxe-table-column prop="type" width="200" label="类型" :formatter="formatNodeType" :edit-render="{name: 'default'}">
+          <vxe-table-column
+            prop="type"
+            width="200"
+            label="类型"
+            :formatter="formatNodeType"
+            :edit-render="{name: 'default'}"
+          >
             <template v-slot:edit="{ row }">
               <el-select v-model="row.type" size="mini">
-                <el-option v-for="(item, index) in nodeType" :key="index" :label="item" :value="index"></el-option>
+                <el-option
+                  v-for="(item, index) in nodeType"
+                  :key="index"
+                  :label="item"
+                  :value="index"
+                ></el-option>
               </el-select>
             </template>
           </vxe-table-column>
@@ -54,7 +71,12 @@
             </el-form-item>
             <el-form-item label="节点类型" label-width="100px">
               <el-select v-model="nodeAdd.type">
-                <el-option v-for="(item, index) in nodeType" :key="index" :label="item" :value="index"></el-option>
+                <el-option
+                  v-for="(item, index) in nodeType"
+                  :key="index"
+                  :label="item"
+                  :value="index"
+                ></el-option>
               </el-select>
             </el-form-item>
           </el-form>
@@ -116,11 +138,7 @@
               <el-input v-model="areaEdit.name"></el-input>
             </el-form-item>
             <el-form-item label="节点选择" label-width="100px">
-              <el-transfer
-                v-model="transferNodes"
-                :data="nodes"
-                :titles="['所有节点', '当前灌区节点']"
-              ></el-transfer>
+              <el-transfer v-model="transferNodes" :data="nodes" :titles="['所有节点', '当前灌区节点']"></el-transfer>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer" style="text-align: center;">
@@ -137,11 +155,7 @@
               <el-input v-model="areaAdd.name"></el-input>
             </el-form-item>
             <el-form-item label="节点选择" label-width="100px">
-              <el-transfer
-                v-model="transferNodes"
-                :data="nodes"
-                :titles="['所有节点', '当前灌区节点']"
-              ></el-transfer>
+              <el-transfer v-model="transferNodes" :data="nodes" :titles="['所有节点', '当前灌区节点']"></el-transfer>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer" style="text-align: center;">
@@ -153,7 +167,14 @@
       <el-tab-pane label="灌溉制度">
         <el-form ref="irrigateProgram" :model="config.irrigateProgram" label-width="100px">
           <el-form-item label="轮灌周期">
-            <el-input-number v-model="config.irrigateProgram.period" :precision="1" :step="0.5" :min="1" :max="14" label="轮灌周期"></el-input-number>
+            <el-input-number
+              v-model="config.irrigateProgram.period"
+              :precision="1"
+              :step="0.5"
+              :min="1"
+              :max="14"
+              label="轮灌周期"
+            ></el-input-number>
           </el-form-item>
           <el-form-item label="工作时段">
             <el-time-picker
@@ -197,15 +218,29 @@
           </el-form-item>
           <el-form-item label="施肥通道">
             <el-select v-model="config.fertilizeProgram.channelNum">
-              <el-option v-for="(item, index) in config.fertilizeProgram.channel" :key="index" :label="item.name" :value="index"></el-option>
+              <el-option
+                v-for="(item, index) in config.fertilizeProgram.channel"
+                :key="index"
+                :label="item.name"
+                :value="index"
+              ></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="施肥量">
-            <el-input v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].fertilizingAmount"></el-input>
+            <el-input
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].fertilizingAmount"
+            ></el-input>
           </el-form-item>
           <el-form-item label="肥水比">
-            <el-select v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].proportion">
-              <el-option v-for="(item, index) in ['1/2', '1/3', '1/5', '1/10']" :key="index" :label="item" :value="item"></el-option>
+            <el-select
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].proportion"
+            >
+              <el-option
+                v-for="(item, index) in ['1/2', '1/3', '1/5', '1/10']"
+                :key="index"
+                :label="item"
+                :value="item"
+              ></el-option>
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -323,7 +358,7 @@
             </div>
             <!-- <el-form :model="">
               <el-form-item label=""></el-form-item>
-            </el-form> -->
+            </el-form>-->
             <!-- <el-input-number v-model="num" :precision="1" :step="0.1"></el-input-number> -->
           </el-card>
         </el-row>
@@ -422,8 +457,6 @@ export default {
           parity: this.portProperty.parity,
           stopBits: this.portProperty.stopBits,
           autoOpen: false
-        ipcRenderer.on('serialPort', (event, arg) => {
-          console.log(arg); // prints "pong"
         });
         ipcRenderer.send('serialPort', serialPort);
         serialPort.open(err => {
