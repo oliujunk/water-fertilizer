@@ -203,8 +203,6 @@ const runParam = {
   IrrManagementParam: {}
 };
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-const { ipcRenderer } = require('electron');
 export default {
   name: "autoControl",
   data() {
@@ -309,8 +307,27 @@ export default {
         runParam.carList = JSON.parse(JSON.stringify(this.carList));
         // console.log(this.carList);
       });
-    // 获取施肥数据
-    // 获取灌溉数据
+
+    // 获取施肥数据和灌溉数据
+    this.$db.config.loadDatabase();
+    this.$db.config
+      .find({})
+      .sort({ id: 1 })
+      .exec((err, docs) => {
+        // console.log(docs[0].irrigateProgram);
+
+        // 灌溉参数
+        let IrrObj = docs[0].irrigateProgram;
+        this.IrrManagementParam.time1 = IrrObj.dailyWorkingTime1;
+        this.IrrManagementParam.time2 = IrrObj.dailyWorkingTime2;
+        this.IrrManagementParam.cycle = IrrObj.period;
+
+        runParam.IrrManagementParam = this.IrrManagementParam;
+        console.log(this.IrrManagementParam);
+
+        // 施肥参数
+      });
+
     // xph.taskStart();
     // xph.taskStop();
   },
@@ -387,13 +404,7 @@ export default {
         }
       }
     }
-  },
-  mounted() {
-    ipcRenderer.send('getSerialPort');
-    ipcRenderer.on('getSerialPort', (event, arg) => {
-      console.log(arg);
-    });
-  },
+  }
 };
 </script>
 

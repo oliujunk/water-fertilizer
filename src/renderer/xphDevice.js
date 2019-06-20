@@ -2,6 +2,7 @@ import {
     sendFrameWithCrc
 } from './communication'
 
+import schedule from 'node-schedule'
 
 class xphClass {
     port;
@@ -17,10 +18,8 @@ class xphClass {
 
     // 时间段定时器句柄
     taskHandle = '';
-    timeOutOnHandle = ['', ''];
-    timeOutOffHandle = ['', ''];
-    intervalOnHandle = ['', ''];
-    intervalOffHandle = ['', ''];
+    jobOnHandle = [];
+    jobOffHandle = [];
     ferTimeOutHandle = ['', '', '', '']; // 施肥浓度比句柄
 
     // 灌溉参数
@@ -49,15 +48,15 @@ class xphClass {
     }];
 
     // 初始化
-    init() {
+    init(port) {
         // 串口对象
-        this.port = '1234';
+        this.port = 'port';
         this.sendBuf = [];
         this.runState = '串口已初始化';
         // 开启一个定时任务
         clearInterval(this.taskHandle);
         this.taskHandle = setInterval(() => {
-            if (this.runState = '串口未初始化') {
+            if (this.runState == '串口未初始化') {
                 return;
             }
 
@@ -70,14 +69,14 @@ class xphClass {
                 send[4] = 0;
                 send[5] = 0;
                 console.log(send);
-                // sendFrameWithCrc(this.port, data, 0, data.length);
+                // sendFrameWithCrc(this.port, send, 0, send.length);
             } else { // 发送控制
                 const data = this.sendBuf.shift();
                 console.log(data);
                 // sendFrameWithCrc(this.port, data, 0, data.length);
             }
 
-        }, 500)
+        }, 5000)
     }
 
 
@@ -91,7 +90,7 @@ class xphClass {
         if (this.runState = '串口未初始化') {
             return;
         }
-
+        // this.sendBuf.push(data);
         console.log(data);
     }
 
@@ -256,45 +255,37 @@ class xphClass {
 
     // 每日执行定时器
     timeoutFunc(config) {
-        // 1.清空上一次时间段运行
-        clearTimeout(this.timeOutOnHandle[config.index]);
-        clearTimeout(this.timeOutOffHandle[config.index]);
-        clearInterval(this.intervalOnHandle[config.index]);
-        clearInterval(this.intervalOffHandle[config.index]);
 
-        // 2.计算出定时时间间隔
-        let nowTime = new Date();
-        nowTime = nowTime.getMonth() * 60 * 60 + nowTime.getMinutes() * 60 + nowTime.getSeconds();
-        let timeOutSatrt = config.time[0].getMonth() * 60 * 60 + config.time[0].getMinutes() * 60 + config.time[0].getSeconds();
-        let timeOutEnd = config.time[1].getMonth() * 60 * 60 + config.time[1].getMinutes() * 60 + config.time[1].getSeconds();
-
-        console.log(nowTime);
-        console.log(timeOutSatrt);
-        console.log(timeOutEnd);
-
-        if (timeOutSatrt >= nowTime) {
-            timeOutSatrt = timeOutSatrt - nowTime;
-            timeOutEnd = timeOutEnd - nowTime;
-        } else {
-            timeOutSatrt = 24 * 3600 + timeOutSatrt - nowTime;
-            timeOutEnd = 24 * 3600 + timeOutEnd - nowTime;
+        // 1.去掉错误时间段
+        if (config.time == null) {
+            console.log('job-时间为空');
+            return;
         }
 
-        console.log(timeOutSatrt);
-        console.log(timeOutEnd);
+        if (config.time[0] == config.time[1]) {
+            console.log('job-时间相同');
+            return;
+        }
 
-        this.timeOutOnHandle[config.index] = setTimeout(() => {
+        console.log(config.time[0]);
+        console.log(config.time[1]);
+
+        const j1 = schedule.scheduleJob(`${config.time[0].getSeconds()} ${config.time[0].getMinutes()} ${config.time[0].getMonth()} * * *`, function () {
+            console.log('定时器触发次数开');
             // 执行一次开启任务
             this.irrStartFun();
-            // 开启后面每日执行
-            this.intervalOnHandle[config.index] = setInterval(this.irrStartFun, 24 * 3600 * 1000);
+        });
 
-        }, timeOutSatrt * 1000);
-        this.timeOutOffHandle[config.index] = setTimeout(() => {
-            // 执行一次关闭任务
+        this.jobOnHandle.push(j1);
+        console.log(this.jobOnHandle);
+
+        const j2 = schedule.scheduleJob(`${config.time[1].getSeconds()} ${config.time[1].getMinutes()} ${config.time[1].getMonth()} * * *`, function () {
+            console.log('定时器触发次数关');
             this.irrStopFun();
-            this.intervalOffHandle[config.index] = setInterval(this.irrStopFun, 24 * 3600 * 1000);
-        }, timeOutEnd * 1000);
+        });
+        this.jobOffHandle.push(j2);
+        console.log(this.jobOffHandle);
+
     }
 
     // 开始运行主逻辑
@@ -339,20 +330,26 @@ class xphClass {
     // 停止运行逻辑运行
     taskStop() {
 
+        while (1) {
+            console.log(this.jobOnHandle);
+            if (this.jobOnHandle.length == 0) {
+                break;
+            }
+            this.jobOnHandle.splice(0, 1)[0].cancel();
+        }
 
-        // 关闭所有定时器
-        for (const item of this.timeOutOnHandle) {
-            clearTimeout(item);
+        while (1) {
+            console.log(this.jobOffHandle);
+            if (this.jobOffHandle.length == 0) {
+                break;
+            }
+            this.jobOffHandle.splice(0, 1)[0].cancel();
         }
-        for (const item of this.intervalOnHandle) {
-            clearInterval(item);
+
+        for (let index = 0; index < this.ferTimeOutHandle.length; index++) {
+            clearTimeout(ferTimeOutHandle[index]);
         }
-        for (const item of this.timeOutOffHandle) {
-            clearTimeout(item);
-        }
-        for (const item of this.intervalOffHandle) {
-            clearInterval(item);
-        }
+
         console.log('runStop');
     }
 
