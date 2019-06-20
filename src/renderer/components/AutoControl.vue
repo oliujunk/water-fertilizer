@@ -185,6 +185,8 @@
 </template>
 
 <script>
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { ipcRenderer } = require('electron');
 export default {
   name: "autoControl",
 
@@ -330,7 +332,13 @@ export default {
         this.dialogTableVisible = false;
       }
     }
-  }
+  },
+  mounted() {
+    ipcRenderer.send('getSerialPort');
+    ipcRenderer.on('getSerialPort', (event, arg) => {
+      console.log(arg);
+    });
+  },
 };
 </script>
 

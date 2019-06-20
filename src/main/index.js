@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron' // eslint-disable-line
+import { app, BrowserWindow, Menu, ipcMain } from 'electron' // eslint-disable-line
 
 import '../renderer/store';
 
@@ -11,6 +11,18 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 let mainWindow;
+
+// eslint-disable-next-line no-unused-vars
+let serialPort = null;
+
+ipcMain.on('serialPort', (event, arg) => {
+  console.log(arg);
+  serialPort = arg;
+});
+ipcMain.on('getSerialPort', (event) => {
+  event.sender.send('getSerialPort', serialPort);
+});
+
 const winURL = process.env.NODE_ENV === 'development'
   ? 'http://localhost:9080'
   : `file://${__dirname}/index.html`;
