@@ -299,9 +299,12 @@ class xphClass {
 
     // 开始运行主逻辑
     taskStart(runParam) {
+
+        console.log(runParam);
+
         if (this.runState = '串口未初始化') {
             console.log('串口未初始化');
-            return;
+            return '串口未初始化';
         }
 
         // 0.参数归一

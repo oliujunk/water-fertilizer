@@ -320,11 +320,20 @@ export default {
       );
     },
     onSideConfirm() {
+      const h = this.$createElement;
+      if (this.ferSelectParam.concentration.indexOf("/") == -1) {
+        this.$notify({
+          title: "施肥参数修改失败！",
+          message: h("i", { style: "color: teal" }, "肥料比没有检测到' / '")
+        });
+        return;
+      }
+
       this.ferRelayList[this.ferRelayCurrent].param = this.ferSelectParam;
       runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
-      const h = this.$createElement;
+
       this.$notify({
-        title: "标题名称",
+        title: "施肥参数修改成功",
         message: h("i", { style: "color: teal" }, "施肥参数修改成功")
       });
     },
@@ -334,7 +343,7 @@ export default {
       );
       const h = this.$createElement;
       this.$notify({
-        title: "标题名称",
+        title: "灌溉参数修改成功",
         message: h("i", { style: "color: teal" }, "灌溉参数修改成功")
       });
     },
@@ -364,8 +373,16 @@ export default {
         this.runState = !this.runState;
         xph.taskStop();
       } else {
-        console.log(xph.taskStart());
-        this.runState = !this.runState;
+        let flagMsg = xph.taskStart(runParam);
+        if (flagMsg != undefined) {
+          const h = this.$createElement;
+          this.$notify({
+            title: "运行错误",
+            message: h("i", { style: "color: teal" }, flagMsg)
+          });
+        } else {
+          this.runState = !this.runState;
+        }
       }
     }
   }
