@@ -212,12 +212,7 @@
           </el-form-item>
           <el-form-item label="施肥通道">
             <el-select v-model="config.fertilizeProgram.channelNum">
-              <el-option
-                v-for="(item, index) in channel"
-                :key="index"
-                :label="item"
-                :value="index"
-              ></el-option>
+              <el-option v-for="(item, index) in channel" :key="index" :label="item" :value="index"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="施肥周期">
@@ -235,7 +230,9 @@
             ></el-input-number>
           </el-form-item>
           <el-form-item label="施肥类型">
-            <el-select v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].type">
+            <el-select
+              v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].type"
+            >
               <el-option
                 v-for="(item, index) in fertilizerType"
                 :key="index"
@@ -252,11 +249,7 @@
             ></el-input-number>
           </el-form-item>
           <el-form-item label="肥水比">
-            <el-input-number
-              value="1"
-              disabled
-            ></el-input-number>
-            :
+            <el-input-number value="1" disabled></el-input-number>:
             <el-input-number
               v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].scale"
               :min="1"
@@ -393,7 +386,7 @@ import md5 from "js-md5";
 import { setTimeout } from "timers";
 import { receiveDataProcess, sendFrameWithCrc } from "../communication";
 // eslint-disable-next-line import/no-extraneous-dependencies
-const { ipcRenderer } = require('electron');
+const { ipcRenderer } = require("electron");
 const schedule = require("node-schedule");
 const SerialPort = require("serialport");
 
@@ -420,7 +413,7 @@ export default {
         irrigateProgram: {
           period: 7,
           dailyWorkingTime1: null,
-          dailyWorkingTime2: null,
+          dailyWorkingTime2: null
         },
         fertilizeProgram: {
           type: 0,
@@ -462,11 +455,11 @@ export default {
           dataBits: 8,
           parity: "none",
           stopBits: 1,
-          autoOpen: false,
+          autoOpen: false
         },
         portButtonText: "打开",
         portButtonType: "danger",
-        portButtonStatus: false,
+        portButtonStatus: false
       },
       users: [],
       userEdit: {},
@@ -484,12 +477,12 @@ export default {
         this.config.portButtonText = "打开";
         this.config.portButtonType = "danger";
         this.config.portButtonStatus = false;
-        ipcRenderer.send('closeSerialPort');
+        ipcRenderer.send("closeSerialPort");
       } else {
         this.config.portButtonText = "关闭";
         this.config.portButtonType = "success";
         this.config.portButtonStatus = true;
-        ipcRenderer.send('openSerialPort', this.config.portProperty);
+        ipcRenderer.send("openSerialPort", this.config.portProperty);
       }
       this.$db.config.remove({}, { multi: true });
       setTimeout(() => {
@@ -565,9 +558,10 @@ export default {
     },
     handleAreaEditOk() {
       this.areaEditDialogVisible = false;
-      this.areaEdit.node = this.transferNodes.map((item) => this.nodes.find((node) => node.addr === item));
+      this.areaEdit.node = this.transferNodes.map(item =>
+        this.nodes.find(node => node.addr === item)
+      );
       this.areas.splice(
-
         this.areas.findIndex(area => area.id === this.areaEdit.id),
         1,
         JSON.parse(JSON.stringify(this.areaEdit))
@@ -600,7 +594,9 @@ export default {
     },
     handleAreaAddOk() {
       this.areaAddDialogVisible = false;
-      this.areaAdd.node = this.transferNodes.map((item) => this.nodes.find((node) => node.addr === item));
+      this.areaAdd.node = this.transferNodes.map(item =>
+        this.nodes.find(node => node.addr === item)
+      );
       this.areas.push(JSON.parse(JSON.stringify(this.areaAdd)));
       this.$db.area.remove({}, { multi: true });
       setTimeout(() => {
@@ -655,8 +651,8 @@ export default {
         this.$db.config.insert(this.config);
       }, 500);
       this.$message({
-        message: '修改成功',
-        type: 'success'
+        message: "修改成功",
+        type: "success"
       });
     },
     handleFertilizeProgramChange() {
@@ -665,8 +661,8 @@ export default {
         this.$db.config.insert(this.config);
       }, 500);
       this.$message({
-        message: '修改成功',
-        type: 'success'
+        message: "修改成功",
+        type: "success"
       });
     }
   },
