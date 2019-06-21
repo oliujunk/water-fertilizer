@@ -394,9 +394,9 @@ import { setTimeout } from "timers";
 import { receiveDataProcess, sendFrameWithCrc } from "../communication";
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ipcRenderer } = require('electron');
-const SerialPort = require("serialport");
-const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 const schedule = require("node-schedule");
+const SerialPort = require("serialport");
+
 export default {
   name: "Setting",
   data() {
@@ -410,9 +410,9 @@ export default {
         baudRate: 9600,
         dataBits: 8,
         parity: "none",
-        stopBits: 1
+        stopBits: 1,
+        autoOpen: false,
       },
-      serialPort: null,
       schedules: {},
       portButtonText: "打开",
       portButtonType: "danger",
@@ -482,56 +482,15 @@ export default {
     },
     handlePortOpen() {
       if (this.portButtonStatus) {
-        this.serialPort.close(err => {
-          if (err) {
-            this.$message.error(`关闭串口${this.serialPort.path}失败！`);
-          } else {
-            this.portButtonText = "打开";
-            this.portButtonType = "danger";
-            this.portButtonStatus = false;
-            this.serialPort = null;
-            this.schedules.job1.cancel();
-          }
-        });
-        this.serialPort = null;
+        this.portButtonText = "打开";
+        this.portButtonType = "danger";
+        this.portButtonStatus = false;
+        ipcRenderer.send('closeSerialPort');
       } else {
-        const serialPort = new SerialPort(this.portProperty.name, {
-          baudRate: this.portProperty.baudRate,
-          dataBits: this.portProperty.dataBits,
-          parity: this.portProperty.parity,
-          stopBits: this.portProperty.stopBits,
-          autoOpen: false
-        });
-        ipcRenderer.send('serialPort', serialPort);
-        serialPort.open(err => {
-          if (err) {
-            this.$message.error(
-              `打开串口${this.portProperty.name}失败！请检查该串口是否被占用。`
-            );
-          } else {
-            const parser = serialPort.pipe(
-              new InterByteTimeout({ interval: 50 })
-            );
-            parser.on("data", receiveDataProcess);
-            const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
-              console.log(new Date());
-              const send = Buffer.alloc(6);
-              send[0] = 0x01;
-              send[1] = 0x03;
-              send[2] = 0x00;
-              send[3] = 0x00;
-              send[4] = 0xf1;
-              send[5] = 0xd8;
-              console.log(job1);
-              sendFrameWithCrc(serialPort, send, 0, 6);
-            });
-            this.schedules = { ...this.schedules, job1 };
-            this.portButtonText = "关闭";
-            this.portButtonType = "success";
-            this.portButtonStatus = true;
-            this.serialPort = serialPort;
-          }
-        });
+        this.portButtonText = "关闭";
+        this.portButtonType = "success";
+        this.portButtonStatus = true;
+        ipcRenderer.send('openSerialPort', this.portProperty);
       }
     },
     handleNodeEdit(row) {
