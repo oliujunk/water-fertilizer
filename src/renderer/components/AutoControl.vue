@@ -341,8 +341,8 @@ export default {
             docs[0].fertilizeProgram.type == 0
               ? 0
               : docs[0].fertilizeProgram.type == 1
-              ? 2
-              : 1;
+                ? 2
+                : 1;
           const ferObj = docs[0].fertilizeProgram.channel;
           const ferlist = [];
 

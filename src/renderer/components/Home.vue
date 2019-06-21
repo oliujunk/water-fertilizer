@@ -10,47 +10,47 @@
         <el-row class="element">
           <el-col :span="4">
             <el-card>
-              <div v-for="item in element.slice(0, 3)">
-                {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
+              <div v-for="(item, index) in sensorValue.slice(0, 3)">
+                {{sensorName[index]}}<br>{{sensorValue[index]}}{{sensorUnit[index]}}
               </div>
             </el-card>
           </el-col>
           <el-col :span="4">
             <el-card>
-              <div v-for="item in element.slice(3, 5)">
-                {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
+              <div v-for="(item, index) in sensorValue.slice(3, 5)">
+                {{sensorName[index+3]}}<br>{{sensorValue[index+3]}}{{sensorUnit[index+3]}}
               </div>
             </el-card>
           </el-col>
           <el-col :span="4">
             <el-card>
               肥料桶1 <br>
-              <div v-for="item in element.slice(5, 8)">
-                {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
+              <div v-for="(item, index) in sensorValue.slice(5, 8)">
+                {{sensorName[index+5]}}<br>{{sensorValue[index+5]}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
           <el-col :span="4">
             <el-card>
               肥料桶2 <br>
-              <div v-for="item in element.slice(8, 11)">
-                {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
+              <div v-for="(item, index) in sensorValue.slice(8, 11)">
+                {{sensorName[index+5]}}<br>{{sensorValue[index+8]}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
           <el-col :span="4">
             <el-card>
               肥料桶3 <br>
-              <div v-for="item in element.slice(11, 14)">
-                {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
+              <div v-for="(item, index) in sensorValue.slice(11, 14)">
+                {{sensorName[index+5]}}<br>{{sensorValue[index+11]}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
           <el-col :span="4">
             <el-card>
               肥料桶4 <br>
-              <div v-for="item in element.slice(14, 17)">
-                {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
+              <div v-for="(item, index) in sensorValue.slice(14, 17)">
+                {{sensorName[index+5]}}<br>{{sensorValue[index+14]}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
@@ -86,6 +86,7 @@
 
 <script>
 import moment from 'moment';
+import { xph } from "../xphDevice";
 
 const accMul = (arg1, arg2) => {
   let m = 0;
@@ -110,6 +111,9 @@ export default {
   name: 'home',
   data() {
     return {
+      sensorValue: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+      sensorName: ['压力', 'PH', 'EC', '系统实时流量', '系统累计流量', '液位', '实时流量', '累计流量'],
+      sensorUnit: ['kPa', '', 'mS/cm', 'm3/h', 'm3', 'mm', 'm3/h', 'm3'],
       accMul,
       element: [
         {
@@ -413,6 +417,12 @@ export default {
         this.drawStirrer(ctx, 530, 260, stirrer[3]);
       }
     },
+
+    getSensorData(data) {
+      console.log(data);
+      this.sensor = [...data];
+    },
+
   },
   mounted() {
     this.$db.element.loadDatabase();
@@ -421,13 +431,14 @@ export default {
     //   this.element = doc.element;
     //   this.relay = doc.relay;
     // });
-    this.$db.element.findOne({}).sort({ dataTime: -1 }).exec((err, docs) => {
-      console.log(docs);
-    });
+    // this.$db.element.findOne({}).sort({ dataTime: -1 }).exec((err, docs) => {
+    //   console.log(docs);
+    // });
     this.drawInit();
     const valve = [true, false, true, true, true, true, true, true, false];
     const stirrer = [true, true, false, true];
     this.drawWithState(true, false, valve, stirrer);
+    xph.on("sensorData", this.getSensorData);
   },
   beforeDestroy() {
     this.$db.pageHome.remove({}, { multi: true });
@@ -436,6 +447,7 @@ export default {
       relay: this.relay,
       dataTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
     });
+    xph.off("sensorData", this.getSensorData);
   },
 };
 </script>
