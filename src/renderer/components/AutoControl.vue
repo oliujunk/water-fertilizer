@@ -341,8 +341,8 @@ export default {
             docs[0].fertilizeProgram.type == 0
               ? 0
               : docs[0].fertilizeProgram.type == 1
-              ? 2
-              : 1;
+                ? 2
+                : 1;
           const ferObj = docs[0].fertilizeProgram.channel;
           const ferlist = [];
 
@@ -384,7 +384,7 @@ export default {
   },
   methods: {
     onTest(data) {
-      console.log("R :" + data.toString("hex").toUpperCase());
+      console.log(`R :${data.toString("hex").toUpperCase()}`);
     },
     onRunstate(state) {
       this.runState = xph.runState == "自动运行";

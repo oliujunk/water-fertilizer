@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 import schedule from 'node-schedule';
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 import {
@@ -143,9 +144,9 @@ class xphClass {
                         // 有液位控制
                         for (let i = 0; i < this.yeweiParam.length; i++) {
                             if (this.yeweiParam[i].Flag) { // 判断是否触发施肥量
-                                console.log(this.yeweiParam[i].value);
-                                console.log(this.ferParam[i].param.value);
-                                console.log(this.sensorData[7 + i * 3]);
+                                // console.log(this.yeweiParam[i].value);
+                                // console.log(this.ferParam[i].param.value);
+                                // console.log(this.sensorData[7 + i * 3]);
 
                                 if ((this.yeweiParam[i].value == undefined ? 0 : this.yeweiParam[i].value) + this.ferParam[i].param.value <= this.sensorData[7 + i * 3]) {
                                     this.yeweiParam[i].Flag = false;
@@ -270,7 +271,7 @@ class xphClass {
 
     // 有线阀控器
     relay(num, state) {
-        let send = new Array(7);
+        const send = new Array(7);
         send[0] = 0x01;
         send[1] = 0x10;
         send[2] = 0x00;
@@ -283,7 +284,7 @@ class xphClass {
 
     // 无线阀控器
     wirelessRelay(num, state) {
-        let send = new Array(7);
+        const send = new Array(7);
         send[0] = 0x01;
         send[1] = 0x10;
         send[2] = 0x00;
@@ -296,7 +297,7 @@ class xphClass {
 
     // 本机控制
     localRelay(num, state) {
-        let send = new Array(7);
+        const send = new Array(7);
         send[0] = 0x01;
         send[1] = 0x10;
         send[2] = 0x00;
@@ -354,7 +355,6 @@ class xphClass {
             }
         }
 
-
         // 开启施肥
         switch (this.ferModeRadio) {
             case 1: // 肥料比
@@ -385,6 +385,10 @@ class xphClass {
                 break;
         }
     }
+
+
+
+
 
     irrStopFun() {
         if (this.taskRunState == false) {
@@ -449,6 +453,7 @@ class xphClass {
         }
     }
 
+
     // 每日执行定时器
     timeoutFunc(config) {
         // 1.去掉错误时间段
@@ -483,6 +488,7 @@ class xphClass {
 
     // 开始运行主逻辑
     taskStart(runParam) {
+
         console.log(runParam);
 
         if (this.runState == '串口未初始化') {
@@ -524,6 +530,12 @@ class xphClass {
         timeConfig.index = 1;
         timeConfig.time = this.IrrManagementParam.time2;
         this.timeoutFunc(timeConfig);
+        console.log(runParam);
+
+        if (this.runState == '串口未初始化') {
+            console.log('串口未初始化');
+            return '串口未初始化';
+        }
     }
 
     // 停止运行逻辑运行
@@ -555,6 +567,7 @@ class xphClass {
         }
         console.log('runStop');
     }
+
 }
 
 const xph = new xphClass();

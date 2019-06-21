@@ -664,7 +664,10 @@ export default {
         message: "修改成功",
         type: "success"
       });
-    }
+    },
+    getSensorData(data) {
+      console.log(data);
+    },
   },
   mounted() {
     this.$db.config.loadDatabase();
@@ -698,7 +701,7 @@ export default {
     this.$db.config.findOne({}, (err, doc) => {
       this.config = doc;
     });
-  }
+  },
 };
 </script>
 
