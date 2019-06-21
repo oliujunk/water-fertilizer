@@ -53,7 +53,8 @@ export default {
             const parser = serialPort.pipe(
               new InterByteTimeout({ interval: 50 })
             );
-            parser.on("data", receiveDataProcess);
+            parser.on("data", xph.receiveHandle);
+            // parser.on("data", receiveDataProcess);
             // const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
             //   console.log(new Date());
             //   const send = Buffer.alloc(6);

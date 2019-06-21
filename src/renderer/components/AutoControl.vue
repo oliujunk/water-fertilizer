@@ -298,7 +298,7 @@ export default {
     this.runState = xph.runState == "自动运行";
     xph.on("runState", this.onRunstate);
     xph.on("runStep", this.onRunStep);
-
+    xph.on("sensorData", this.onTest);
     // 正在运行
     if (this.runState == false) {
       this.ferModeRadio = xph.ferModeRadio;
@@ -341,8 +341,8 @@ export default {
             docs[0].fertilizeProgram.type == 0
               ? 0
               : docs[0].fertilizeProgram.type == 1
-                ? 2
-                : 1;
+              ? 2
+              : 1;
           const ferObj = docs[0].fertilizeProgram.channel;
           const ferlist = [];
 
@@ -376,14 +376,16 @@ export default {
     }
 
     this.carListLength = this.carList.length;
-    // xph.taskStart();
-    // xph.taskStop();
   },
   beforeDestroy() {
     xph.off("runState", this.onRunstate);
     xph.off("runStep", this.onRunStep);
+    xph.off("sensorData", this.onTest);
   },
   methods: {
+    onTest(data) {
+      console.log(data);
+    },
     onRunstate(state) {
       this.runState = xph.runState == "自动运行";
       // console.log(this.runState);
