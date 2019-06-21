@@ -203,8 +203,6 @@ const runParam = {
   IrrManagementParam: {}
 };
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-const { ipcRenderer } = require('electron');
 export default {
   name: "autoControl",
   data() {
@@ -296,25 +294,104 @@ export default {
     };
   },
   mounted() {
-    // 获取卡片数据;
-    this.$db.area.loadDatabase();
-    this.$db.area
-      .find({})
-      .sort({ id: 1 })
-      .exec((err, docs) => {
-        carBuf = docs;
-        this.carList = carBuf;
-        this.areaList = [];
+    // 得到当前运行状态
+    this.runState = xph.runState == "自动运行";
+    xph.on("runState", this.onRunstate);
+    xph.on("runStep", this.onRunStep);
 
-        runParam.carList = JSON.parse(JSON.stringify(this.carList));
-        // console.log(this.carList);
-      });
-    // 获取施肥数据
-    // 获取灌溉数据
+    // 正在运行
+    if (this.runState == false) {
+      this.ferModeRadio = xph.ferModeRadio;
+      // 获取卡片数据;
+      this.$db.area.loadDatabase();
+      this.$db.area
+        .find({})
+        .sort({ id: 1 })
+        .exec((err, docs) => {
+          carBuf = docs;
+          this.carList = carBuf;
+          this.areaList = [];
+
+          runParam.carList = JSON.parse(JSON.stringify(this.carList));
+          this.carListLength = this.carList.length;
+          // console.log(this.carList);
+        });
+
+      // 获取施肥数据和灌溉数据
+      this.$db.config.loadDatabase();
+      this.$db.config
+        .find({})
+        .sort({ id: 1 })
+        .exec((err, docs) => {
+          // console.log(docs[0].fertilizeProgram.channel);
+
+          // 灌溉参数
+          const IrrObj = docs[0].irrigateProgram;
+          this.IrrManagementParam.time1 = IrrObj.dailyWorkingTime1;
+          this.IrrManagementParam.time2 = IrrObj.dailyWorkingTime2;
+          this.IrrManagementParam.cycle = IrrObj.period;
+
+          runParam.IrrManagementParam = JSON.parse(
+            JSON.stringify(this.IrrManagementParam)
+          );
+          // console.log(this.IrrManagementParam);
+
+          // 施肥参数
+          this.ferModeRadio =
+            docs[0].fertilizeProgram.type == 0
+              ? 0
+              : docs[0].fertilizeProgram.type == 1
+                ? 2
+                : 1;
+          const ferObj = docs[0].fertilizeProgram.channel;
+          const ferlist = [];
+
+          for (let index = 0; index < ferObj.length; index++) {
+            const iterator = ferObj[index];
+            const entry = {
+              name: `施肥阀${index + 1}`,
+              jId: index.toString(),
+              param: {
+                ferType: iterator.name,
+                concentration: `1/${iterator.scale}`,
+                time: iterator.rotationIrrigation,
+                cycle: iterator.period,
+                value: iterator.amount
+              }
+            };
+            this.ferRelayList[index] = entry;
+          }
+          this.ferSelectParam = this.ferRelayList[0].param;
+          // console.log(this.ferRelayList);
+          runParam.ferModeRadio = this.ferModeRadio;
+          runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
+        });
+    } else {
+      this.runStep = xph.runStep;
+      this.carList = xph.carList;
+      this.IrrManagementParam = xph.IrrManagementParam;
+      this.ferRelayList = xph.ferParam;
+      this.ferModeRadio = xph.ferModeRadio;
+      this.ferSelectParam = this.ferRelayList[0].param;
+    }
+
+    this.carListLength = this.carList.length;
     // xph.taskStart();
     // xph.taskStop();
   },
+  beforeDestroy() {
+    xph.off("runState", this.onRunstate);
+    xph.off("runStep", this.onRunStep);
+  },
   methods: {
+    onRunstate(state) {
+      this.runState = xph.runState == "自动运行";
+      // console.log(this.runState);
+    },
+    onRunStep(step) {
+      this.runStep = step;
+      console.log(`onRunStep${step}`);
+    },
     onSideItem(index) {
       this.ferRelayCurrent = index;
       this.ferSelectParam = JSON.parse(
@@ -322,11 +399,20 @@ export default {
       );
     },
     onSideConfirm() {
+      const h = this.$createElement;
+      if (this.ferSelectParam.concentration.indexOf("/") == -1) {
+        this.$notify({
+          title: "施肥参数修改失败！",
+          message: h("i", { style: "color: teal" }, "肥料比没有检测到' / '")
+        });
+        return;
+      }
+
       this.ferRelayList[this.ferRelayCurrent].param = this.ferSelectParam;
       runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
-      const h = this.$createElement;
+
       this.$notify({
-        title: "标题名称",
+        title: "施肥参数修改成功",
         message: h("i", { style: "color: teal" }, "施肥参数修改成功")
       });
     },
@@ -336,7 +422,7 @@ export default {
       );
       const h = this.$createElement;
       this.$notify({
-        title: "标题名称",
+        title: "灌溉参数修改成功",
         message: h("i", { style: "color: teal" }, "灌溉参数修改成功")
       });
     },
@@ -346,6 +432,7 @@ export default {
     },
     onCarDelect(index) {
       this.areaList.push(this.carList.splice(index, 1)[0]);
+      runParam.carList = JSON.parse(JSON.stringify(this.carList));
       this.carListLength = this.carList.length;
     },
     onDialogConfirm() {
@@ -366,17 +453,21 @@ export default {
         this.runState = !this.runState;
         xph.taskStop();
       } else {
-        console.log(xph.taskStart());
-        this.runState = !this.runState;
+        runParam.ferModeRadio = this.ferModeRadio;
+        const flagMsg = xph.taskStart(runParam);
+        if (flagMsg != undefined) {
+          const h = this.$createElement;
+          this.$notify({
+            title: "运行错误",
+            message: h("i", { style: "color: teal" }, flagMsg)
+          });
+        } else {
+          this.runState = !this.runState;
+          this.runStep = 0;
+        }
       }
     }
-  },
-  mounted() {
-    ipcRenderer.send('getSerialPort');
-    ipcRenderer.on('getSerialPort', (event, arg) => {
-      console.log(arg);
-    });
-  },
+  }
 };
 </script>
 

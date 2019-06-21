@@ -7,11 +7,12 @@
 <script>
 import { xph } from "./xphDevice";
 import { receiveDataProcess, sendFrameWithCrc } from "./communication";
-// eslint-disable-next-line import/no-extraneous-dependencies
-const { ipcRenderer } = require('electron');
+
 const schedule = require("node-schedule");
 const SerialPort = require("serialport");
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
+
+const { ipcRenderer } = require("electron");
 
 export default {
   name: "water-fertilizer",
@@ -19,18 +20,16 @@ export default {
     return {
       portProperty: null,
       SerialPort: null,
-      schedule: {},
+      schedule: {}
     };
   },
   mounted() {
-    xph.init();
-    xph.print();
     // 接收打开串口的消息
-    ipcRenderer.on('pushSerialPort', (event, arg) => {
+    ipcRenderer.on("pushSerialPort", (event, arg) => {
       this.portProperty = arg;
     });
     // 接收关闭串口的消息
-    ipcRenderer.on('popSerialPort', (event, arg) => {
+    ipcRenderer.on("popSerialPort", (event, arg) => {
       this.portProperty = null;
     });
   },
@@ -42,8 +41,9 @@ export default {
           dataBits: this.portProperty.dataBits,
           parity: this.portProperty.parity,
           stopBits: this.portProperty.stopBits,
-          autoOpen: this.portProperty.autoOpen,
+          autoOpen: this.portProperty.autoOpen
         });
+        xph.init(this.SerialPort);
         serialPort.open(err => {
           if (err) {
             this.$message.error(
@@ -75,10 +75,11 @@ export default {
           }
         });
       } else {
+        xph.reInit();
         this.serialPort.close();
         this.schedule.job1.cancel();
       }
-    },
+    }
   },
   beforeDestroy() {}
 };
