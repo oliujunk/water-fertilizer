@@ -13,7 +13,6 @@ const schedule = require("node-schedule");
 const SerialPort = require("serialport");
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 
-
 export default {
   name: "water-fertilizer",
   data() {
@@ -26,12 +25,12 @@ export default {
   mounted() {
     xph.init();
     xph.print();
+    // 接收打开串口的消息
     ipcRenderer.on('pushSerialPort', (event, arg) => {
-      console.log(arg);
       this.portProperty = arg;
     });
+    // 接收关闭串口的消息
     ipcRenderer.on('popSerialPort', (event, arg) => {
-      console.log(arg);
       this.portProperty = null;
     });
   },
@@ -76,6 +75,7 @@ export default {
           }
         });
       } else {
+        this.serialPort.close();
         this.schedule.job1.cancel();
       }
     },
