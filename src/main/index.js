@@ -12,15 +12,11 @@ if (process.env.NODE_ENV !== 'development') {
 
 let mainWindow;
 
-// eslint-disable-next-line no-unused-vars
-let serialPort = null;
-
-ipcMain.on('serialPort', (event, arg) => {
-  console.log(arg);
-  serialPort = arg;
+ipcMain.on('openSerialPort', (event, arg) => {
+  event.sender.send('pushSerialPort', arg);
 });
-ipcMain.on('getSerialPort', (event) => {
-  event.sender.send('getSerialPort', serialPort);
+ipcMain.on('closeSerialPort', (event, arg) => {
+  event.sender.send('popSerialPort', arg);
 });
 
 const winURL = process.env.NODE_ENV === 'development'

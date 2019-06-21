@@ -331,7 +331,7 @@
             </div>
             <el-row>
               <el-col :span="24">
-                <el-select v-model="portProperty.name" placeholder="串口号" size="small">
+                <el-select v-model="config.portProperty.name" placeholder="串口号" size="small">
                   <el-option
                     v-for="item in portList"
                     :key="item.comName"
@@ -339,7 +339,7 @@
                     :label="item.comName"
                   ></el-option>
                 </el-select>
-                <el-select v-model="portProperty.baudRate" placeholder="波特率" size="small">
+                <el-select v-model="config.portProperty.baudRate" placeholder="波特率" size="small">
                   <el-option
                     v-for="item in [110, 300, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200]"
                     :key="item"
@@ -347,10 +347,10 @@
                     :label="item"
                   ></el-option>
                 </el-select>
-                <el-select v-model="portProperty.dataBits" placeholder="数据位" size="small">
+                <el-select v-model="config.portProperty.dataBits" placeholder="数据位" size="small">
                   <el-option v-for="item in [8, 7, 6, 5]" :key="item" :value="item" :label="item"></el-option>
                 </el-select>
-                <el-select v-model="portProperty.parity" placeholder="校验位" size="small">
+                <el-select v-model="config.portProperty.parity" placeholder="校验位" size="small">
                   <el-option
                     v-for="item in ['none', 'even', 'mark', 'odd', 'space']"
                     :key="item"
@@ -358,15 +358,15 @@
                     :label="item"
                   ></el-option>
                 </el-select>
-                <el-select v-model="portProperty.stopBits" placeholder="停止位" size="small">
+                <el-select v-model="config.portProperty.stopBits" placeholder="停止位" size="small">
                   <el-option v-for="item in [1, 2]" :key="item" :value="item" :label="item"></el-option>
                 </el-select>
                 <el-button
-                  :type="portButtonType"
+                  :type="config.portButtonType"
                   size="small"
                   @click="handlePortOpen"
                   round
-                >{{portButtonText}}</el-button>
+                >{{config.portButtonText}}</el-button>
               </el-col>
             </el-row>
           </el-card>
@@ -394,9 +394,9 @@ import { setTimeout } from "timers";
 import { receiveDataProcess, sendFrameWithCrc } from "../communication";
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { ipcRenderer } = require('electron');
-const SerialPort = require("serialport");
-const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 const schedule = require("node-schedule");
+const SerialPort = require("serialport");
+
 export default {
   name: "Setting",
   data() {
@@ -405,18 +405,6 @@ export default {
       channel: ["通道1", "通道2", "通道3", "通道4"],
       fertilizerType: ["氮肥", "钾肥", "磷肥", "氨肥"],
       portList: [],
-      portProperty: {
-        name: "",
-        baudRate: 9600,
-        dataBits: 8,
-        parity: "none",
-        stopBits: 1
-      },
-      serialPort: null,
-      schedules: {},
-      portButtonText: "打开",
-      portButtonType: "danger",
-      portButtonStatus: false,
       systemParameterDialog: false,
       nodeManageDialog: false,
       nodes: [],
@@ -467,7 +455,18 @@ export default {
               scale: 60 // 肥水比 分子默认为1
             }
           ]
-        }
+        },
+        portProperty: {
+          name: "",
+          baudRate: 9600,
+          dataBits: 8,
+          parity: "none",
+          stopBits: 1,
+          autoOpen: false,
+        },
+        portButtonText: "打开",
+        portButtonType: "danger",
+        portButtonStatus: false,
       },
       users: [],
       userEdit: {},
@@ -481,58 +480,21 @@ export default {
       return this.nodeType[cellValue];
     },
     handlePortOpen() {
-      if (this.portButtonStatus) {
-        this.serialPort.close(err => {
-          if (err) {
-            this.$message.error(`关闭串口${this.serialPort.path}失败！`);
-          } else {
-            this.portButtonText = "打开";
-            this.portButtonType = "danger";
-            this.portButtonStatus = false;
-            this.serialPort = null;
-            this.schedules.job1.cancel();
-          }
-        });
-        this.serialPort = null;
+      if (this.config.portButtonStatus) {
+        this.config.portButtonText = "打开";
+        this.config.portButtonType = "danger";
+        this.config.portButtonStatus = false;
+        ipcRenderer.send('closeSerialPort');
       } else {
-        const serialPort = new SerialPort(this.portProperty.name, {
-          baudRate: this.portProperty.baudRate,
-          dataBits: this.portProperty.dataBits,
-          parity: this.portProperty.parity,
-          stopBits: this.portProperty.stopBits,
-          autoOpen: false
-        });
-        ipcRenderer.send('serialPort', serialPort);
-        serialPort.open(err => {
-          if (err) {
-            this.$message.error(
-              `打开串口${this.portProperty.name}失败！请检查该串口是否被占用。`
-            );
-          } else {
-            const parser = serialPort.pipe(
-              new InterByteTimeout({ interval: 50 })
-            );
-            parser.on("data", receiveDataProcess);
-            const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
-              console.log(new Date());
-              const send = Buffer.alloc(6);
-              send[0] = 0x01;
-              send[1] = 0x03;
-              send[2] = 0x00;
-              send[3] = 0x00;
-              send[4] = 0xf1;
-              send[5] = 0xd8;
-              console.log(job1);
-              sendFrameWithCrc(serialPort, send, 0, 6);
-            });
-            this.schedules = { ...this.schedules, job1 };
-            this.portButtonText = "关闭";
-            this.portButtonType = "success";
-            this.portButtonStatus = true;
-            this.serialPort = serialPort;
-          }
-        });
+        this.config.portButtonText = "关闭";
+        this.config.portButtonType = "success";
+        this.config.portButtonStatus = true;
+        ipcRenderer.send('openSerialPort', this.config.portProperty);
       }
+      this.$db.config.remove({}, { multi: true });
+      setTimeout(() => {
+        this.$db.config.insert(this.config);
+      }, 500);
     },
     handleNodeEdit(row) {
       this.$refs.nodeTable.setActiveRow(row);
@@ -715,7 +677,7 @@ export default {
     this.$db.area.loadDatabase();
     SerialPort.list((err, ports) => {
       this.portList = [...ports];
-      this.portProperty.name = ports[0].comName;
+      this.config.portProperty.name = ports[0].comName;
     });
     this.$db.user.find({}, (err, docs) => {
       this.users = docs;
