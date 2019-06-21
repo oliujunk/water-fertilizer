@@ -12,6 +12,7 @@ const schedule = require("node-schedule");
 const SerialPort = require("serialport");
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 const { ipcRenderer } = require("electron");
 
 export default {
@@ -19,7 +20,7 @@ export default {
   data() {
     return {
       portProperty: null,
-      SerialPort: null,
+      serialPort: null,
       schedule: {}
     };
   },
@@ -43,7 +44,6 @@ export default {
           stopBits: this.portProperty.stopBits,
           autoOpen: this.portProperty.autoOpen
         });
-        xph.init(this.SerialPort);
         serialPort.open(err => {
           if (err) {
             this.$message.error(
@@ -54,30 +54,31 @@ export default {
               new InterByteTimeout({ interval: 50 })
             );
             parser.on("data", receiveDataProcess);
-            const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
-              console.log(new Date());
-              const send = Buffer.alloc(6);
-              send[0] = 0x01;
-              send[1] = 0x03;
-              send[2] = 0x00;
-              send[3] = 0x00;
-              send[4] = 0xf1;
-              send[5] = 0xd8;
-              console.log(job1);
-              sendFrameWithCrc(serialPort, send, 0, 6);
-            });
-            this.schedule = { ...this.schedule, job1 };
-            this.schedules = { ...this.schedules, job1 };
+            // const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
+            //   console.log(new Date());
+            //   const send = Buffer.alloc(6);
+            //   send[0] = 0x01;
+            //   send[1] = 0x03;
+            //   send[2] = 0x00;
+            //   send[3] = 0x00;
+            //   send[4] = 0xf1;
+            //   send[5] = 0xd8;
+            //   console.log(job1);
+            //   sendFrameWithCrc(serialPort, send, 0, 6);
+            // });
+            // this.schedule = { ...this.schedule, job1 };
+            // this.schedules = { ...this.schedules, job1 };
             this.portButtonText = "关闭";
             this.portButtonType = "success";
             this.portButtonStatus = true;
             this.serialPort = serialPort;
+            xph.init(this.serialPort);
           }
         });
       } else {
-        xph.reInit();
         this.serialPort.close();
-        this.schedule.job1.cancel();
+        xph.reInit();
+        // this.schedule.job1.cancel();
       }
     }
   },
