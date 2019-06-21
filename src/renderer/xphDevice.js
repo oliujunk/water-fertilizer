@@ -1,4 +1,5 @@
 import schedule from 'node-schedule';
+const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 import {
     crc16modbus
 } from 'crc';
@@ -20,12 +21,22 @@ class xphClass {
     sensorData = new Array(17);
     // 4个液位值
     yeweiParam = [{
-        value: [0, 0, 0, 0],
-        Flag: [false, false, false, false]
-    }, {
-        value: [0, 0, 0, 0],
-        Flag: [false, false, false, false]
-    }];
+            value: 0,
+            Flag: false
+        },
+        {
+            value: 0,
+            Flag: false
+        },
+        {
+            value: 0,
+            Flag: false
+        },
+        {
+            value: 0,
+            Flag: false
+        }
+    ];
 
     // 时间段定时器句柄
     taskHandle = '';
@@ -104,7 +115,59 @@ class xphClass {
         this.port = port;
         this.sendBuf = [];
         this.changeRunState('串口已初始化');
-        // 开启一个定时任务
+
+        const parser = this.port.pipe(
+            new InterByteTimeout({
+                interval: 50
+            })
+        );
+
+
+
+        // 监测数据接受
+        parser.on("data", (data) => {
+
+            const recvLen = data.length;
+            if (recvLen <= 3) return;
+            switch (data[1]) {
+                case 0x03:
+                    // console.log(data);
+                    if (recvLen > 80) {
+                        this.sensorData = [];
+
+                        // 解析数据
+                        for (let index = 0; index < 17; index++) {
+                            this.sensorData.push((data[4 + index * 4] << 24) + (data[5 + index * 4] << 16) + (data[6 + index * 4] << 8) + (data[7 + index * 4]));
+                        };
+
+                        // 有液位控制
+                        for (let i = 0; i < this.yeweiParam.length; i++) {
+                            if (this.yeweiParam[i].Flag) { // 判断是否触发施肥量
+                                console.log(this.yeweiParam[i].value);
+                                console.log(this.ferParam[i].param.value);
+                                console.log(this.sensorData[7 + i * 3]);
+
+                                if ((this.yeweiParam[i].value == undefined ? 0 : this.yeweiParam[i].value) + this.ferParam[i].param.value <= this.sensorData[7 + i * 3]) {
+                                    this.yeweiParam[i].Flag = false;
+                                    this.localRelay(i, 0);
+                                }
+                            }
+                        }
+                        this.emit("sensorData", this.sensorData);
+                    }
+                    break;
+
+                case 0x10:
+                    break;
+
+                default:
+                    break;
+            }
+
+        });
+
+
+        // 开启一个定时发送任务
         clearInterval(this.taskHandle);
         this.taskHandle = setInterval(() => {
             if (this.runState == '串口未初始化') {
@@ -121,16 +184,16 @@ class xphClass {
                 send.push(crcData & 0x00ff);
                 send.push(crcData >> 8);
                 // console.log(send);
-                port.write(send);
+                // port.write(send);
             } else { // 发送控制
                 const data = this.sendBuf.shift();
                 const crcData = crc16modbus(data);
                 data.push(crcData & 0x00ff);
                 data.push(crcData >> 8);
-                console.log(data);
+                console.log("S :" + Date.parse(new Date()) + data.toString('hex').toUpperCase());
                 port.write(data);
             }
-        }, 1000);
+        }, 100);
     }
 
 
@@ -265,48 +328,13 @@ class xphClass {
         this.sendFrame(send);
     }
 
-    // 接受回调函数
-    receiveHandle(data) {
-        const recvLen = data.length;
-        if (recvLen <= 3) return;
-        switch (data[1]) {
-            case 0x03:
-                // console.log(data);
-                if (recvLen > 80) {
-                    this.sensorData = [];
-                    // 解析数据
-                    for (let index = 0; index < 17; index++) {
-                        this.sensorData.push((data[4 + index * 4] << 24) + (data[5 + index * 4] << 16) + (data[6 + index * 4] << 8) + (data[7 + index * 4]));
-                    }
-
-                    // // 有液位控制
-                    // for (let index = 0; index < 2; index++) {
-                    //     const element = this.yeweiParam[index];
-                    //     for (let i = 0; i < 4; i++) {
-                    //         if (element.Flag[i]) { // 判断是否触发施肥量
-                    //             if (element.value[i] - this.ferParam[i].param.value >= this.sensorData[5 + i * 3]) {
-                    //                 element.Flag[i] = false;
-                    //                 this.localRelay(i, 0);
-                    //             }
-                    //         }
-                    //     }
-                    // }
-                    this.emit("sensorData", this.sensorData);
-                    console.log(this.sensorData);
-                }
-                break;
-            case 0x10:
-                break;
-            default:
-                break;
-        }
-    }
-
     // 灌溉执行程序
-    irrStartFun(num) {
+    irrStartFun() {
         this.taskRunState = true;
 
         const index = this.runStep;
+
+        this.localRelay(5, 1);
         // 开启片区所有阀门
         // console.log(this.carList[index].node);
         for (const node of this.carList[index].node) {
@@ -347,8 +375,8 @@ class xphClass {
 
                 // 填充施肥量参数
                 for (let i = 0; i < 4; i++) {
-                    this.yeweiParam[num].Flag[i] = true;
-                    this.yeweiParam[num].value[i] = this.sensorData[5 + i * 3];
+                    this.yeweiParam[i].Flag = true;
+                    this.yeweiParam[i].value = this.sensorData[7 + i * 3];
                 }
 
                 break;
@@ -358,7 +386,7 @@ class xphClass {
         }
     }
 
-    irrStopFun(num) {
+    irrStopFun() {
         if (this.taskRunState == false) {
             return;
         }
@@ -386,9 +414,11 @@ class xphClass {
 
         // 清空施肥量标志位并关闭所有施肥阀门
         for (let i = 0; i < 4; i++) {
-            this.yeweiParam[num].Flag[i] = false;
-            this.localRelay(index, 0);
+            this.yeweiParam[i].Flag = false;
+            this.localRelay(i, 0);
         }
+
+        this.localRelay(5, 0);
 
 
         // 计算运行参数
@@ -437,12 +467,16 @@ class xphClass {
         console.log(`${time1.getSeconds()} ${time1.getMinutes()} ${time1.getHours()} * * *`);
         console.log(`${time2.getSeconds()} ${time2.getMinutes()} ${time2.getHours()} * * *`);
 
-        const j1 = schedule.scheduleJob(`${time1.getSeconds()} * * * * *`, this.irrStartFun(config.index));
+        const j1 = schedule.scheduleJob(`${time1.getSeconds()} * * * * *`, () => {
+            this.irrStartFun();
+        });
 
         this.jobOnHandle.push(j1);
         console.log(this.jobOnHandle);
 
-        const j2 = schedule.scheduleJob(`${time2.getSeconds()} * * * * *`, this.irrStopFun(config.index));
+        const j2 = schedule.scheduleJob(`${time2.getSeconds()} * * * * *`, () => {
+            this.irrStopFun(config.index)
+        });
         this.jobOffHandle.push(j2);
         console.log(this.jobOffHandle);
     }
@@ -464,11 +498,9 @@ class xphClass {
         this.taskRunState = false;
         this.runState = "自动运行";
         for (let i = 0; i < 4; i++) {
-            this.yeweiParam[0].Flag[i] = false;
+            this.yeweiParam[i].Flag = false;
         }
-        for (let i = 0; i < 4; i++) {
-            this.yeweiParam[1].Flag[i] = false;
-        }
+
 
 
         // 1.解析出片区参数
@@ -522,10 +554,6 @@ class xphClass {
             this.changeRunState('串口已初始化');
         }
         console.log('runStop');
-    }
-
-    print() {
-        console.log(this.port);
     }
 }
 

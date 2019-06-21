@@ -384,7 +384,7 @@ export default {
   },
   methods: {
     onTest(data) {
-      console.log(data);
+      console.log("R :" + data.toString("hex").toUpperCase());
     },
     onRunstate(state) {
       this.runState = xph.runState == "自动运行";
