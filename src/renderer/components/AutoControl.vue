@@ -295,7 +295,7 @@ export default {
   },
   mounted() {
     // 得到当前运行状态
-    this.runState = xph.runState == "自动运行" ? true : false;
+    this.runState = xph.runState == "自动运行";
     xph.on("runState", this.onRunstate);
     xph.on("runStep", this.onRunStep);
 
@@ -326,7 +326,7 @@ export default {
           // console.log(docs[0].fertilizeProgram.channel);
 
           // 灌溉参数
-          let IrrObj = docs[0].irrigateProgram;
+          const IrrObj = docs[0].irrigateProgram;
           this.IrrManagementParam.time1 = IrrObj.dailyWorkingTime1;
           this.IrrManagementParam.time2 = IrrObj.dailyWorkingTime2;
           this.IrrManagementParam.cycle = IrrObj.period;
@@ -341,14 +341,14 @@ export default {
             docs[0].fertilizeProgram.type == 0
               ? 0
               : docs[0].fertilizeProgram.type == 1
-              ? 2
-              : 1;
-          let ferObj = docs[0].fertilizeProgram.channel;
-          let ferlist = [];
+                ? 2
+                : 1;
+          const ferObj = docs[0].fertilizeProgram.channel;
+          const ferlist = [];
 
           for (let index = 0; index < ferObj.length; index++) {
             const iterator = ferObj[index];
-            let entry = {
+            const entry = {
               name: `施肥阀${index + 1}`,
               jId: index.toString(),
               param: {
@@ -385,12 +385,12 @@ export default {
   },
   methods: {
     onRunstate(state) {
-      this.runState = xph.runState == "自动运行" ? true : false;
+      this.runState = xph.runState == "自动运行";
       // console.log(this.runState);
     },
     onRunStep(step) {
       this.runStep = step;
-      console.log("onRunStep" + step);
+      console.log(`onRunStep${step}`);
     },
     onSideItem(index) {
       this.ferRelayCurrent = index;
@@ -454,7 +454,7 @@ export default {
         xph.taskStop();
       } else {
         runParam.ferModeRadio = this.ferModeRadio;
-        let flagMsg = xph.taskStart(runParam);
+        const flagMsg = xph.taskStart(runParam);
         if (flagMsg != undefined) {
           const h = this.$createElement;
           this.$notify({

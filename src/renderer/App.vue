@@ -7,8 +7,7 @@
 <script>
 import { xph } from "./xphDevice";
 import { receiveDataProcess, sendFrameWithCrc } from "./communication";
-// eslint-disable-next-line import/no-extraneous-dependencies
-const { ipcRenderer } = require("electron");
+
 const schedule = require("node-schedule");
 const SerialPort = require("serialport");
 const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
@@ -25,8 +24,6 @@ export default {
     };
   },
   mounted() {
-    xph.init();
-    xph.print();
     // 接收打开串口的消息
     ipcRenderer.on("pushSerialPort", (event, arg) => {
       this.portProperty = arg;
@@ -46,6 +43,7 @@ export default {
           stopBits: this.portProperty.stopBits,
           autoOpen: this.portProperty.autoOpen
         });
+        xph.init(this.SerialPort);
         serialPort.open(err => {
           if (err) {
             this.$message.error(
@@ -77,6 +75,7 @@ export default {
           }
         });
       } else {
+        xph.reInit();
         this.serialPort.close();
         this.schedule.job1.cancel();
       }

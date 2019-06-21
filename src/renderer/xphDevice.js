@@ -112,14 +112,13 @@ class xphClass {
                 send[4] = 0;
                 send[5] = 0;
                 console.log(send);
-                // sendFrameWithCrc(this.port, send, 0, send.length);
+                sendFrameWithCrc(this.port, send, 0, send.length);
             } else { // 发送控制
                 const data = this.sendBuf.shift();
                 console.log(data);
-                // sendFrameWithCrc(this.port, data, 0, data.length);
+                sendFrameWithCrc(this.port, data, 0, data.length);
             }
-
-        }, 5000)
+        }, 5000);
     }
 
 
@@ -164,16 +163,15 @@ class xphClass {
         for (const iterator of this._emap[eventName]) {
             list.push(iterator);
         }
-        let len = list.length;
+        const len = list.length;
         if (list == undefined || list == null || len == 0) return;
 
-        //反向遍历，防止在订阅者在回调中移除自身带来的下标错位
-        for (var i = len - 1; i > -1; --i) {
+        // 反向遍历，防止在订阅者在回调中移除自身带来的下标错位
+        for (let i = len - 1; i > -1; --i) {
             // console.log(list);
             // console.log(i);
             list[i](arg);
         }
-
     }
 
     changeRunState(state) {
@@ -280,7 +278,7 @@ class xphClass {
     irrStartFun() {
         this.taskRunState = true;
 
-        let index = this.runStep;
+        const index = this.runStep;
         // 开启片区所有阀门
         // console.log(this.carList[index].node);
         for (const node of this.carList[index].node) {
@@ -296,7 +294,7 @@ class xphClass {
                     break;
                 default:
                     console.log('片区无类型');
-                    break
+                    break;
             }
         }
 
@@ -309,7 +307,7 @@ class xphClass {
                     clearTimeout(this.ferTimeOutHandle[index]);
                     this.ferTimeOutHandle[index] = setTimeout(() => {
                         this.localRelay(index, 0);
-                    }, this.ferParam[index].param.time * 1000) // * 60 
+                    }, this.ferParam[index].param.time * 1000); // * 60
                 }
                 break;
             case 2: // 施肥量
@@ -331,7 +329,7 @@ class xphClass {
         }
         this.taskRunState = false;
 
-        let index = this.runStep;
+        const index = this.runStep;
         // 关闭片区所有阀门
         // console.log(this.carList[index].node);
         for (const node of this.carList[index].node) {
@@ -347,7 +345,7 @@ class xphClass {
                     break;
                 default:
                     console.log('片区无类型');
-                    break
+                    break;
             }
         }
 
@@ -369,8 +367,8 @@ class xphClass {
         this.changeRunStep(this.runStep);
 
 
-        console.log('运行次数：' + this.carStep);
-        console.log('xxx运行天数:' + this.runDayNum);
+        console.log(`运行次数：${this.carStep}`);
+        console.log(`xxx运行天数:${this.runDayNum}`);
         // 运行完毕
         if (this.carStep >= this.carList.length) {
             if (this.runDayNum >= this.IrrManagementParam.cycle) {
@@ -381,7 +379,6 @@ class xphClass {
 
     // 每日执行定时器
     timeoutFunc(config) {
-
         // 1.去掉错误时间段
         if (config.time == null) {
             console.log('job-时间为空');
@@ -393,8 +390,8 @@ class xphClass {
             return;
         }
 
-        let time1 = new Date(config.time[0]);
-        let time2 = new Date(config.time[1]);
+        const time1 = new Date(config.time[0]);
+        const time2 = new Date(config.time[1]);
         console.log(`${time1.getSeconds()} ${time1.getMinutes()} ${time1.getHours()} * * *`);
         console.log(`${time2.getSeconds()} ${time2.getMinutes()} ${time2.getHours()} * * *`);
 
@@ -413,12 +410,10 @@ class xphClass {
         });
         this.jobOffHandle.push(j2);
         console.log(this.jobOffHandle);
-
     }
 
     // 开始运行主逻辑
     taskStart(runParam) {
-
         console.log(runParam);
 
         if (this.runState == '串口未初始化') {
@@ -460,7 +455,6 @@ class xphClass {
 
     // 停止运行逻辑运行
     taskStop() {
-
         while (1) {
             if (this.jobOnHandle.length == 0) {
                 break;
