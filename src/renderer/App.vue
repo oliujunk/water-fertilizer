@@ -25,6 +25,7 @@ export default {
     };
   },
   mounted() {
+    xph.paramInit();
     // 接收打开串口的消息
     ipcRenderer.on("pushSerialPort", (event, arg) => {
       this.portProperty = arg;
@@ -50,11 +51,10 @@ export default {
               `打开串口${this.portProperty.name}失败！请检查该串口是否被占用。`
             );
           } else {
-            const parser = serialPort.pipe(
-              new InterByteTimeout({ interval: 50 })
-            );
-            parser.on("data", xph.receiveHandle);
-            // parser.on("data", receiveDataProcess);
+            // const parser = serialPort.pipe(
+            //   new InterByteTimeout({ interval: 50 })
+            // );
+            // parser.on("data", xph.receiveHandle);
             // const job1 = schedule.scheduleJob("*/5 * * * * *", () => {
             //   console.log(new Date());
             //   const send = Buffer.alloc(6);

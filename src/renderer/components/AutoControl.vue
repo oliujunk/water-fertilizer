@@ -299,6 +299,7 @@ export default {
     xph.on("runState", this.onRunstate);
     xph.on("runStep", this.onRunStep);
     xph.on("sensorData", this.onTest);
+    xph.on("jkData", this.onTest);
     // 正在运行
     if (this.runState == false) {
       this.ferModeRadio = xph.ferModeRadio;
@@ -341,8 +342,8 @@ export default {
             docs[0].fertilizeProgram.type == 0
               ? 0
               : docs[0].fertilizeProgram.type == 1
-                ? 2
-                : 1;
+              ? 2
+              : 1;
           const ferObj = docs[0].fertilizeProgram.channel;
           const ferlist = [];
 
@@ -381,10 +382,11 @@ export default {
     xph.off("runState", this.onRunstate);
     xph.off("runStep", this.onRunStep);
     xph.off("sensorData", this.onTest);
+    xph.off("jkData", this.onTest);
   },
   methods: {
     onTest(data) {
-      console.log(data);
+      console.log(`R :${data.toString("hex").toUpperCase()}`);
     },
     onRunstate(state) {
       this.runState = xph.runState == "自动运行";
@@ -411,7 +413,6 @@ export default {
       }
 
       this.ferRelayList[this.ferRelayCurrent].param = this.ferSelectParam;
-      runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
 
       this.$notify({
         title: "施肥参数修改成功",
@@ -419,9 +420,6 @@ export default {
       });
     },
     onIrrConfirm() {
-      runParam.IrrManagementParam = JSON.parse(
-        JSON.stringify(this.IrrManagementParam)
-      );
       const h = this.$createElement;
       this.$notify({
         title: "灌溉参数修改成功",
@@ -434,7 +432,6 @@ export default {
     },
     onCarDelect(index) {
       this.areaList.push(this.carList.splice(index, 1)[0]);
-      runParam.carList = JSON.parse(JSON.stringify(this.carList));
       this.carListLength = this.carList.length;
     },
     onDialogConfirm() {
@@ -455,7 +452,13 @@ export default {
         this.runState = !this.runState;
         xph.taskStop();
       } else {
+        // 参数打包
         runParam.ferModeRadio = this.ferModeRadio;
+        runParam.carList = JSON.parse(JSON.stringify(this.carList));
+        runParam.IrrManagementParam = JSON.parse(
+          JSON.stringify(this.IrrManagementParam)
+        );
+        runParam.ferParam = JSON.parse(JSON.stringify(this.ferRelayList));
         const flagMsg = xph.taskStart(runParam);
         if (flagMsg != undefined) {
           const h = this.$createElement;
