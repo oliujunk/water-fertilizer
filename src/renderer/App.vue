@@ -25,6 +25,7 @@ export default {
     };
   },
   mounted() {
+    xph.paramInit();
     // 接收打开串口的消息
     ipcRenderer.on("pushSerialPort", (event, arg) => {
       this.portProperty = arg;

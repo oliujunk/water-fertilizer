@@ -1,13 +1,16 @@
 /* eslint-disable no-prototype-builtins */
 import schedule from 'node-schedule';
-const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
 import {
     crc16modbus
 } from 'crc';
-
+import moment from 'moment';
+const InterByteTimeout = require("@serialport/parser-inter-byte-timeout");
+const log4js = require('log4js');
 
 class xphClass {
     port;
+    ReadSwitch = true;
+    logger = '';
     sendBuf = [];
     // 轮灌区运行步骤
     carStep = 0;
@@ -124,10 +127,8 @@ class xphClass {
         );
 
 
-
         // 监测数据接受
         parser.on("data", (data) => {
-
             const recvLen = data.length;
             if (recvLen <= 3) return;
             switch (data[1]) {
@@ -139,7 +140,7 @@ class xphClass {
                         // 解析数据
                         for (let index = 0; index < 17; index++) {
                             this.sensorData.push((data[4 + index * 4] << 24) + (data[5 + index * 4] << 16) + (data[6 + index * 4] << 8) + (data[7 + index * 4]));
-                        };
+                        }
 
                         // 有液位控制
                         for (let i = 0; i < this.yeweiParam.length; i++) {
@@ -148,7 +149,7 @@ class xphClass {
                                 // console.log(this.ferParam[i].param.value);
                                 // console.log(this.sensorData[7 + i * 3]);
 
-                                if ((this.yeweiParam[i].value == undefined ? 0 : this.yeweiParam[i].value) + this.ferParam[i].param.value <= this.sensorData[7 + i * 3]) {
+                                if ((this.yeweiParam[i].value == undefined ? 0 : this.yeweiParam[i].value) + this.ferParam[i].param.value * 10 <= this.sensorData[7 + i * 3]) {
                                     this.yeweiParam[i].Flag = false;
                                     this.localRelay(i, 0);
                                 }
@@ -158,13 +159,21 @@ class xphClass {
                     }
                     break;
 
+                case 0x01:
+                    let buf = [];
+                    // console.log(data);
+                    for (let i = 0; i < data[2]; i++) {
+                        buf.push(data[i + 3]);
+                    }
+                    this.emit("jkData", buf);
+                    break;
+
                 case 0x10:
                     break;
 
                 default:
                     break;
             }
-
         });
 
 
@@ -176,27 +185,45 @@ class xphClass {
             }
 
             if (this.sendBuf.length == 0) { // 读取数据
-                const send = Array(4);
-                send[0] = 0x01;
-                send[1] = 0x03;
-                send[2] = 0x00;
-                send[3] = 0x00;
-                const crcData = crc16modbus(send);
-                send.push(crcData & 0x00ff);
-                send.push(crcData >> 8);
-                // console.log(send);
-                // port.write(send);
+                if (this.ReadSwitch) {
+                    this.ReadData();
+                } else {
+                    this.ReadJkState();
+                }
+
+                this.ReadSwitch = !this.ReadSwitch;
             } else { // 发送控制
                 const data = this.sendBuf.shift();
                 const crcData = crc16modbus(data);
                 data.push(crcData & 0x00ff);
                 data.push(crcData >> 8);
-                console.log("S :" + Date.parse(new Date()) + data.toString('hex').toUpperCase());
+                console.log(`${moment().format("YYYY,hh:mm:ss")} - S :${data.toString('hex').toUpperCase()}`);
+                this.logger.info(` S :${data.toString('hex').toUpperCase()}`);
                 port.write(data);
             }
-        }, 100);
+        }, 500);
     }
 
+    // 参数初始化
+    paramInit() {
+        log4js.configure({
+            appenders: {
+                cheese: {
+                    type: 'file',
+                    filename: 'cheese.log',
+                    maxLogSize: 102400,
+                    backups: 2
+                }
+            },
+            categories: {
+                default: {
+                    appenders: ['cheese'],
+                    level: 'info'
+                }
+            }
+        });
+        this.logger = log4js.getLogger('cheese');
+    }
 
     reInit() {
         this.taskStop();
@@ -211,7 +238,7 @@ class xphClass {
             this._emap[eventName] = [];
         }
         this._emap[eventName].push(f);
-        console.log(this._emap);
+        // console.log(this._emap);
         return this._emap[eventName] - 1;
     }
 
@@ -226,7 +253,7 @@ class xphClass {
             }
         }
 
-        console.log(this._emap);
+        // console.log(this._emap);
     }
 
     // 触发事件
@@ -269,6 +296,36 @@ class xphClass {
         // console.log(data);
     }
 
+    // 读取继电器状态
+    ReadJkState() {
+        const send = Array(8);
+        send[0] = 0x01;
+        send[1] = 0x01;
+        send[2] = 0x00;
+        send[3] = 0x00;
+        send[4] = 0x00;
+        send[5] = 0x0d;
+        const crcData = crc16modbus(send);
+        send.push(crcData & 0x00ff);
+        send.push(crcData >> 8);
+        // console.log(send);
+        this.port.write(send);
+    }
+
+    // 读取传感器数据
+    ReadData() {
+        const send = Array(4);
+        send[0] = 0x01;
+        send[1] = 0x03;
+        send[2] = 0x00;
+        send[3] = 0x00;
+        const crcData = crc16modbus(send);
+        send.push(crcData & 0x00ff);
+        send.push(crcData >> 8);
+        // console.log(send);
+        this.port.write(send);
+    }
+
     // 有线阀控器
     relay(num, state) {
         const send = new Array(7);
@@ -276,7 +333,7 @@ class xphClass {
         send[1] = 0x10;
         send[2] = 0x00;
         send[3] = 0x7b;
-        send[4] = num;
+        send[4] = num - 1;
         send[5] = 0x01;
         send[6] = state;
         this.sendFrame(send);
@@ -289,7 +346,7 @@ class xphClass {
         send[1] = 0x10;
         send[2] = 0x00;
         send[3] = 0x7c;
-        send[4] = num;
+        send[4] = num - 1;
         send[5] = 0x01;
         send[6] = state;
         this.sendFrame(send);
@@ -335,22 +392,23 @@ class xphClass {
 
         const index = this.runStep;
 
-        this.localRelay(5, 1);
+        this.localRelay(4, 1);
         // 开启片区所有阀门
+        this.logger.info(JSON.stringify(this.carList[index].node));
         // console.log(this.carList[index].node);
+
         for (const node of this.carList[index].node) {
-            switch (node.type) {
-                case 0:
+            this.logger.info(JSON.stringify(node));
+            switch (node.type.toString()) {
+                case "0":
                     this.relay(node.addr, 1);
                     break;
-                case 1:
+                case "1":
                     this.wirelessRelay(node.addr, 1);
-                    break;
-                case 2:
-                    this.localRelay(node.addr, 1);
                     break;
                 default:
                     console.log('片区无类型');
+                    this.logger.info("无此片区类型");
                     break;
             }
         }
@@ -387,9 +445,6 @@ class xphClass {
     }
 
 
-
-
-
     irrStopFun() {
         if (this.taskRunState == false) {
             return;
@@ -400,18 +455,16 @@ class xphClass {
         // 关闭片区所有阀门
         // console.log(this.carList[index].node);
         for (const node of this.carList[index].node) {
-            switch (node.type) {
-                case 0:
+            switch (node.type.toString()) {
+                case "0":
                     this.relay(node.addr, 0);
                     break;
-                case 1:
+                case "1":
                     this.wirelessRelay(node.addr, 0);
-                    break;
-                case 2:
-                    this.localRelay(node.addr, 0);
                     break;
                 default:
                     console.log('片区无类型');
+                    // this.logger.info("无此片区类型");
                     break;
             }
         }
@@ -422,7 +475,7 @@ class xphClass {
             this.localRelay(i, 0);
         }
 
-        this.localRelay(5, 0);
+        this.localRelay(4, 0);
 
 
         // 计算运行参数
@@ -445,6 +498,9 @@ class xphClass {
 
         console.log(`运行次数：${this.carStep}`);
         console.log(`xxx运行天数:${this.runDayNum}`);
+        this.logger.info(`运行次数：${this.carStep}`);
+        this.logger.info(`xxx运行天数:${this.runDayNum}`);
+
         // 运行完毕
         if (this.carStep >= this.carList.length) {
             if (this.runDayNum >= this.IrrManagementParam.cycle) {
@@ -471,6 +527,8 @@ class xphClass {
         const time2 = new Date(config.time[1]);
         console.log(`${time1.getSeconds()} ${time1.getMinutes()} ${time1.getHours()} * * *`);
         console.log(`${time2.getSeconds()} ${time2.getMinutes()} ${time2.getHours()} * * *`);
+        this.logger.info(`${time1.getSeconds()} ${time1.getMinutes()} ${time1.getHours()} * * *`);
+        this.logger.info(`${time2.getSeconds()} ${time2.getMinutes()} ${time2.getHours()} * * *`);
 
         const j1 = schedule.scheduleJob(`${time1.getSeconds()} * * * * *`, () => {
             this.irrStartFun();
@@ -480,7 +538,7 @@ class xphClass {
         console.log(this.jobOnHandle);
 
         const j2 = schedule.scheduleJob(`${time2.getSeconds()} * * * * *`, () => {
-            this.irrStopFun(config.index)
+            this.irrStopFun(config.index);
         });
         this.jobOffHandle.push(j2);
         console.log(this.jobOffHandle);
@@ -488,8 +546,8 @@ class xphClass {
 
     // 开始运行主逻辑
     taskStart(runParam) {
-
         console.log(runParam);
+        this.logger.info(runParam);
 
         if (this.runState == '串口未初始化') {
             console.log('串口未初始化');
@@ -506,7 +564,6 @@ class xphClass {
         for (let i = 0; i < 4; i++) {
             this.yeweiParam[i].Flag = false;
         }
-
 
 
         // 1.解析出片区参数
@@ -530,12 +587,6 @@ class xphClass {
         timeConfig.index = 1;
         timeConfig.time = this.IrrManagementParam.time2;
         this.timeoutFunc(timeConfig);
-        console.log(runParam);
-
-        if (this.runState == '串口未初始化') {
-            console.log('串口未初始化');
-            return '串口未初始化';
-        }
     }
 
     // 停止运行逻辑运行
@@ -547,6 +598,7 @@ class xphClass {
             this.jobOnHandle.splice(0, 1)[0].cancel();
         }
         console.log(this.jobOnHandle);
+
         while (1) {
             if (this.jobOffHandle.length == 0) {
                 break;
@@ -554,6 +606,7 @@ class xphClass {
             this.jobOffHandle.splice(0, 1)[0].cancel();
         }
         console.log(this.jobOffHandle);
+
 
         for (let index = 0; index < this.ferTimeOutHandle.length; index++) {
             clearTimeout(this.ferTimeOutHandle[index]);
@@ -566,8 +619,8 @@ class xphClass {
             this.changeRunState('串口已初始化');
         }
         console.log('runStop');
+        this.logger.info('runStop');
     }
-
 }
 
 const xph = new xphClass();

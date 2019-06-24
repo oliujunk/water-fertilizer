@@ -1,0 +1,35 @@
+[2019-06-24T14:17:29.108] [INFO] cheese - Cheese is Comté.
+[2019-06-24T14:18:00.384] [INFO] cheese - { carList: 
+   [ { id: 1, name: '灌区1', node: [Array], _id: 'kU9aAffUnDi1NzCs' },
+     { id: 2, name: '灌区2', node: [Array], _id: 'WoTkr5g8bv2KQSsW' },
+     { id: 3, name: '灌区3', node: [Array], _id: 'i2FCUw3AAoZb1ks1' },
+     { id: 4, name: '灌区4', node: [Array], _id: 'CzHQwiYFFMWnmrSl' },
+     { id: 5, name: '灌区5', node: [Array], _id: 'fLCd57AADKdFRvAU' },
+     { id: 6, name: 'qqq11', node: [Array], _id: 'TL2UIOP3rNhHot4J' } ],
+  ferParam: 
+   [ { name: '施肥阀1', jId: '0', param: [Object] },
+     { name: '施肥阀2', jId: '1', param: [Object] },
+     { name: '施肥阀3', jId: '2', param: [Object] },
+     { name: '施肥阀4', jId: '3', param: [Object] } ],
+  ferModeRadio: 0,
+  IrrManagementParam: 
+   { cycle: 7,
+     time1: [ '2019-06-21T06:08:00.000Z', '2019-06-21T07:08:20.000Z' ],
+     time2: [ '2019-06-21T06:08:30.000Z', '2019-06-21T07:08:45.000Z' ] } }
+[2019-06-24T14:38:03.392] [INFO] cheese - { carList: 
+   [ { id: 1, name: '灌区1', node: [Array], _id: 'kU9aAffUnDi1NzCs' },
+     { id: 2, name: '灌区2', node: [Array], _id: 'WoTkr5g8bv2KQSsW' },
+     { id: 3, name: '灌区3', node: [Array], _id: 'i2FCUw3AAoZb1ks1' },
+     { id: 4, name: '灌区4', node: [Array], _id: 'CzHQwiYFFMWnmrSl' },
+     { id: 5, name: '灌区5', node: [Array], _id: 'fLCd57AADKdFRvAU' },
+     { id: 6, name: 'qqq11', node: [Array], _id: 'TL2UIOP3rNhHot4J' } ],
+  ferParam: 
+   [ { name: '施肥阀1', jId: '0', param: [Object] },
+     { name: '施肥阀2', jId: '1', param: [Object] },
+     { name: '施肥阀3', jId: '2', param: [Object] },
+     { name: '施肥阀4', jId: '3', param: [Object] } ],
+  ferModeRadio: 0,
+  IrrManagementParam: 
+   { cycle: 7,
+     time1: [ '2019-06-21T06:08:00.000Z', '2019-06-21T07:08:20.000Z' ],
+     time2: [ '2019-06-21T06:08:30.000Z', '2019-06-21T07:08:45.000Z' ] } }
