@@ -86,6 +86,7 @@
 
 <script>
 import moment from 'moment';
+import { setInterval } from 'timers';
 import { xph } from "../xphDevice";
 
 const accMul = (arg1, arg2) => {
@@ -239,6 +240,8 @@ export default {
         },
       ],
       currentIrrigatedArea: 0,
+      currentArea: {},
+      valveState: [false, true, false, false, false, true, false, false, false, false, false, false, false],
     };
   },
   methods: {
@@ -412,17 +415,21 @@ export default {
         this.drawWaterPump(ctx, 580, 55, valve[8]);
 
         this.drawStirrer(ctx, 140, 260, stirrer[0]);
-        this.drawStirrer(ctx, 270, 260, stirrer[1]);
-        this.drawStirrer(ctx, 400, 260, stirrer[2]);
-        this.drawStirrer(ctx, 530, 260, stirrer[3]);
+        this.drawStirrer(ctx, 270, 260, stirrer[0]);
+        this.drawStirrer(ctx, 400, 260, stirrer[1]);
+        this.drawStirrer(ctx, 530, 260, stirrer[1]);
       }
     },
 
     getSensorData(data) {
-      console.log(data);
-      this.sensor = [...data];
+      this.sensorValue = [...data];
     },
-
+    getCurrentArea(data) {
+      this.currentArea = [...data];
+    },
+    getValveState(data) {
+      this.valveState = [...data];
+    },
   },
   mounted() {
     this.$db.element.loadDatabase();
@@ -435,10 +442,18 @@ export default {
     //   console.log(docs);
     // });
     this.drawInit();
-    const valve = [true, false, true, true, true, true, true, true, false];
-    const stirrer = [true, true, false, true];
-    this.drawWithState(true, false, valve, stirrer);
+    const valve = [false, false, false, false, false, false, false, false, false]; // 阀门
+    const stirrer = [false, false]; // 搅拌器
+    // this.drawWithState(false, false, valve, stirrer);
+    this.drawWithState(this.valveState[0], this.valveState[1], this.valveState.slice(2, 11), this.valveState.slice(11, 13));
     xph.on("sensorData", this.getSensorData);
+    xph.on("currentArae", this.getCurrentArea);
+    xph.on("valveState", this.getValveState);
+    setInterval(() => {
+      this.valveState[0] = !this.valveState[0];
+      this.valveState[1] = !this.valveState[1];
+      this.drawWithState(this.valveState[0], this.valveState[1], this.valveState.slice(2, 11), this.valveState.slice(11, 13));
+    }, 1000);
   },
   beforeDestroy() {
     this.$db.pageHome.remove({}, { multi: true });
@@ -448,6 +463,8 @@ export default {
       dataTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
     });
     xph.off("sensorData", this.getSensorData);
+    xph.off("currentArae", this.getCurrentArea);
+    xph.off("valveState", this.getValveState);
   },
 };
 </script>

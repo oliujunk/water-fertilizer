@@ -11,12 +11,14 @@
       </div>
     </el-header>
     <el-main :style="mainHeight">
-      <el-carousel height="500px" :interval="5000">
-        <el-carousel-item v-for="index in 3" :key="index">
-          <!-- <img :src="require(`../static/${index}.jpg`)"> -->
-          <div> image {{ index }}</div>
+      <!-- <el-carousel height="600px" :interval="5000">
+        <el-carousel-item v-for="index in 1" :key="index">
+          <img :src="require(`D:/js/water-fertilizer/static/${index}.jpg`)">
         </el-carousel-item>
-      </el-carousel>
+      </el-carousel> -->
+      <div>
+        <img :src="require('D:/js/water-fertilizer/static/1.jpg')">
+      </div>
     </el-main>
     <el-dialog
       title="系统登录"
@@ -150,5 +152,15 @@ export default {
   text-align: center;
   line-height: 160px;
   padding: 0;
+  div {
+    width: 100%;
+    height: 100%;
+    img {
+      width: 995px;
+      height: 595px;
+      max-width: 100%;
+      max-height: 99%;
+    }
+  }
 }
 </style>

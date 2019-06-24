@@ -187,7 +187,6 @@
             ></el-time-picker>
             <el-time-picker
               is-range
-              arrow-control
               v-model="config.irrigateProgram.dailyWorkingTime2"
               range-separator="至"
               start-placeholder="开始时间"
@@ -246,7 +245,10 @@
               v-model="config.fertilizeProgram.channel[config.fertilizeProgram.channelNum].amount"
               :max="500"
               :min="1"
+              :precision="3"
+              :step="0.001"
             ></el-input-number>
+            (m3)
           </el-form-item>
           <el-form-item label="肥水比">
             <el-input-number value="1" disabled></el-input-number>:
@@ -364,17 +366,17 @@
             </el-row>
           </el-card>
         </el-row>
-        <el-row>
+        <!-- <el-row>
           <el-card class="communication-setting">
             <div slot="header">
               <span>灌溉系统参数</span>
             </div>
-            <!-- <el-form :model="">
+            <el-form :model="">
               <el-form-item label=""></el-form-item>
-            </el-form>-->
-            <!-- <el-input-number v-model="num" :precision="1" :step="0.1"></el-input-number> -->
+            </el-form>
+            <el-input-number v-model="num" :precision="1" :step="0.1"></el-input-number>
           </el-card>
-        </el-row>
+        </el-row> -->
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -394,7 +396,7 @@ export default {
   name: "Setting",
   data() {
     return {
-      nodeType: ["有线阀控器", "无线阀控器", "有线传感器", "无线传感器"],
+      nodeType: ["有线阀控器", "无线阀控器"],
       channel: ["通道1", "通道2", "通道3", "通道4"],
       fertilizerType: ["氮肥", "钾肥", "磷肥", "氨肥"],
       portList: [],
