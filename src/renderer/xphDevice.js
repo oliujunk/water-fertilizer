@@ -149,7 +149,7 @@ class xphClass {
                                 // console.log(this.ferParam[i].param.value);
                                 // console.log(this.sensorData[7 + i * 3]);
 
-                                if ((this.yeweiParam[i].value == undefined ? 0 : this.yeweiParam[i].value) + this.ferParam[i].param.value * 10 <= this.sensorData[7 + i * 3]) {
+                                if ((this.yeweiParam[i].value == undefined ? 0 : this.yeweiParam[i].value) + this.ferParam[i].param.value * 1000 <= this.sensorData[7 + i * 3]) {
                                     this.yeweiParam[i].Flag = false;
                                     this.localRelay(i, 0);
                                 }
