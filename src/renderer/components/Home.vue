@@ -11,14 +11,14 @@
           <el-col :span="4">
             <el-card>
               <div v-for="(item, index) in sensorValue.slice(0, 3)">
-                {{sensorName[index]}}<br>{{sensorValue[index]}}{{sensorUnit[index]}}
+                {{sensorName[index]}}<br>{{accMul(sensorValue[index], sensorPrec[index])}}{{sensorUnit[index]}}
               </div>
             </el-card>
           </el-col>
           <el-col :span="4">
             <el-card>
               <div v-for="(item, index) in sensorValue.slice(3, 5)">
-                {{sensorName[index+3]}}<br>{{sensorValue[index+3]}}{{sensorUnit[index+3]}}
+                {{sensorName[index+3]}}<br>{{accMul(sensorValue[index+3], sensorPrec[index+3])}}{{sensorUnit[index+3]}}
               </div>
             </el-card>
           </el-col>
@@ -26,7 +26,7 @@
             <el-card>
               肥料桶1 <br>
               <div v-for="(item, index) in sensorValue.slice(5, 8)">
-                {{sensorName[index+5]}}<br>{{sensorValue[index+5]}}{{sensorUnit[index+5]}}
+                {{sensorName[index+5]}}<br>{{accMul(sensorValue[index+5], sensorPrec[index+5])}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
@@ -34,7 +34,7 @@
             <el-card>
               肥料桶2 <br>
               <div v-for="(item, index) in sensorValue.slice(8, 11)">
-                {{sensorName[index+5]}}<br>{{sensorValue[index+8]}}{{sensorUnit[index+5]}}
+                {{sensorName[index+5]}}<br>{{accMul(sensorValue[index+8], sensorPrec[index+5])}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
@@ -42,7 +42,7 @@
             <el-card>
               肥料桶3 <br>
               <div v-for="(item, index) in sensorValue.slice(11, 14)">
-                {{sensorName[index+5]}}<br>{{sensorValue[index+11]}}{{sensorUnit[index+5]}}
+                {{sensorName[index+5]}}<br>{{accMul(sensorValue[index+11], sensorPrec[index+5])}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
@@ -50,7 +50,7 @@
             <el-card>
               肥料桶4 <br>
               <div v-for="(item, index) in sensorValue.slice(14, 17)">
-                {{sensorName[index+5]}}<br>{{sensorValue[index+14]}}{{sensorUnit[index+5]}}
+                {{sensorName[index+5]}}<br>{{accMul(sensorValue[index+14], sensorPrec[index+5])}}{{sensorUnit[index+5]}}
               </div>
             </el-card>
           </el-col>
@@ -62,14 +62,8 @@
             <div slot="header">
               <span>灌区状态</span>
             </div>
-            <div>当前灌区：{{irrigatedArea[currentIrrigatedArea].name}}</div>
-            <div v-for="(item, index) in irrigatedArea[currentIrrigatedArea].relay">
-              {{item.name}}:
-              <el-switch :key="index" v-model="item.state" disabled></el-switch>
-            </div>
-            <div v-for="item in irrigatedArea[currentIrrigatedArea].data">
-              {{`${item.name}:`}}<br>{{`${accMul(item.data, item.prec)}${item.unit}`}}
-            </div>
+            <div>自动灌溉：{{runState ? '开启' : '关闭'}}</div>
+            <div v-if="runState">当前灌区：{{areaList ? areaList[runStep].name : ''}}</div>
           </el-card>
         </el-row>
         <el-row class="alarm-information">
@@ -112,9 +106,10 @@ export default {
   name: 'home',
   data() {
     return {
-      sensorValue: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+      sensorValue: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       sensorName: ['压力', 'PH', 'EC', '系统实时流量', '系统累计流量', '液位', '实时流量', '累计流量'],
       sensorUnit: ['kPa', '', 'mS/cm', 'm3/h', 'm3', 'mm', 'm3/h', 'm3'],
+      sensorPrec: [1, 0.01, 0.01, 0.1, 0.001, 0.1, 0.1, 0.001],
       accMul,
       element: [
         {
@@ -240,8 +235,10 @@ export default {
         },
       ],
       currentIrrigatedArea: 0,
-      currentArea: {},
-      valveState: [false, true, false, false, false, true, false, false, false, false, false, false, false],
+      runState: false,
+      runStep: 0,
+      valveState: [false, false, false, false, false, false, false, false, false, false, false, false, false],
+      areaList: null,
     };
   },
   methods: {
@@ -380,7 +377,7 @@ export default {
       ctx.strokeStyle = 'black';
     },
 
-    drawWithState(mainPipeState, addWaterPipeState, valve, stirrer) {
+    drawWithState(mainPipeState, addWaterPipeState, up, down, stirrer, fertilizeState) {
       const canvas = document.getElementById('tutorial');
       if (canvas.getContext) {
         const ctx = canvas.getContext('2d');
@@ -403,16 +400,17 @@ export default {
         else ctx.fillStyle = '#F56C6C';
         ctx.fill(addWaterPipe);
 
-        this.drawValve(ctx, 115, 130, valve[0]);
-        this.drawValve(ctx, 115, 340, valve[1]);
-        this.drawValve(ctx, 245, 130, valve[2]);
-        this.drawValve(ctx, 245, 340, valve[3]);
-        this.drawValve(ctx, 375, 130, valve[4]);
-        this.drawValve(ctx, 375, 340, valve[5]);
-        this.drawValve(ctx, 505, 130, valve[6]);
-        this.drawValve(ctx, 505, 340, valve[7]);
+        this.drawValve(ctx, 115, 130, up[0]);
+        this.drawValve(ctx, 245, 130, up[1]);
+        this.drawValve(ctx, 375, 130, up[2]);
+        this.drawValve(ctx, 505, 130, up[3]);
 
-        this.drawWaterPump(ctx, 580, 55, valve[8]);
+        this.drawValve(ctx, 115, 340, down[0]);
+        this.drawValve(ctx, 245, 340, down[1]);
+        this.drawValve(ctx, 375, 340, down[2]);
+        this.drawValve(ctx, 505, 340, down[3]);
+
+        this.drawWaterPump(ctx, 580, 55, fertilizeState);
 
         this.drawStirrer(ctx, 140, 260, stirrer[0]);
         this.drawStirrer(ctx, 270, 260, stirrer[0]);
@@ -424,16 +422,33 @@ export default {
     getSensorData(data) {
       this.sensorValue = [...data];
     },
+    getCurrentState(data) {
+      this.runState = data;
+    },
     getCurrentArea(data) {
-      this.currentArea = [...data];
+      this.runStep = data;
+      this.areaList = JSON.parse(JSON.stringify(xph.carList));
     },
     getValveState(data) {
-      this.valveState = [...data];
+      this.valveState = [];
+      let state = 0;
+      for (let i = 0, len = data.length; i < len; i++) {
+        state += (data[i] << (i * 8));
+      }
+      
+      for (let i = 0; i < 13; i++) {
+        this.valveState.push((state & (0x0001 << i)) !== 0);
+      }
+      console.log(this.valveState);
     },
   },
   mounted() {
+    this.runState = xph.runState == "自动运行";
+    this.runStep = xph.runStep;
+    this.areaList = JSON.parse(JSON.stringify(xph.carList));
     this.$db.element.loadDatabase();
     this.$db.pageHome.loadDatabase();
+    // this.getValveState([5, 6]);
     // this.$db.pageHome.findOne({}, (err, doc) => {
     //   this.element = doc.element;
     //   this.relay = doc.relay;
@@ -445,14 +460,12 @@ export default {
     const valve = [false, false, false, false, false, false, false, false, false]; // 阀门
     const stirrer = [false, false]; // 搅拌器
     // this.drawWithState(false, false, valve, stirrer);
-    this.drawWithState(this.valveState[0], this.valveState[1], this.valveState.slice(2, 11), this.valveState.slice(11, 13));
-    xph.on("sensorData", this.getSensorData);
-    xph.on("currentArae", this.getCurrentArea);
-    xph.on("valveState", this.getValveState);
+    this.drawWithState(this.valveState[5], this.valveState[6], this.valveState.slice(0, 4), this.valveState.slice(7, 11), this.valveState.slice(11, 13), this.valveState[4]);
+    xph.on("sensorData", this.getSensorData); // 传感器数据
+    xph.on("runStep", this.getCurrentArea); // 自动灌溉当前的灌区
+    xph.on("jkData", this.getValveState); // 本地阀门状态
     setInterval(() => {
-      this.valveState[0] = !this.valveState[0];
-      this.valveState[1] = !this.valveState[1];
-      this.drawWithState(this.valveState[0], this.valveState[1], this.valveState.slice(2, 11), this.valveState.slice(11, 13));
+      this.drawWithState(this.valveState[5], this.valveState[6], this.valveState.slice(0, 4), this.valveState.slice(7, 11), this.valveState.slice(11, 13), this.valveState[4]);
     }, 1000);
   },
   beforeDestroy() {
@@ -463,8 +476,8 @@ export default {
       dataTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss'),
     });
     xph.off("sensorData", this.getSensorData);
-    xph.off("currentArae", this.getCurrentArea);
-    xph.off("valveState", this.getValveState);
+    xph.off("runStep", this.getCurrentArea);
+    xph.off("jkData", this.getValveState);
   },
 };
 </script>

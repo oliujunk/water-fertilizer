@@ -530,14 +530,14 @@ class xphClass {
         this.logger.info(`${time1.getSeconds()} ${time1.getMinutes()} ${time1.getHours()} * * *`);
         this.logger.info(`${time2.getSeconds()} ${time2.getMinutes()} ${time2.getHours()} * * *`);
 
-        const j1 = schedule.scheduleJob(`${time1.getSeconds()} * * * * *`, () => {
+        const j1 = schedule.scheduleJob(`${time1.getSeconds()} ${time1.getMinutes()} ${time1.getHours()} * * *`, () => {
             this.irrStartFun();
         });
 
         this.jobOnHandle.push(j1);
         console.log(this.jobOnHandle);
 
-        const j2 = schedule.scheduleJob(`${time2.getSeconds()} * * * * *`, () => {
+        const j2 = schedule.scheduleJob(`${time2.getSeconds()} ${time2.getMinutes()} ${time2.getHours()} * * *`, () => {
             this.irrStopFun(config.index);
         });
         this.jobOffHandle.push(j2);

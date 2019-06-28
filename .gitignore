@@ -10,3 +10,5 @@ thumbs.db
 !.gitkeep
 water-fertilizer/
 yarn.lock
+package-lock.json
+*.log

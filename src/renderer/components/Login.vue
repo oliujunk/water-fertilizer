@@ -17,7 +17,7 @@
         </el-carousel-item>
       </el-carousel> -->
       <div>
-        <img :src="require('D:/js/water-fertilizer/static/1.jpg')">
+        <img :src="require('../../../static/1.jpg')">
       </div>
     </el-main>
     <el-dialog
@@ -48,7 +48,7 @@
         <el-button type="primary" @click="handleLogin" :loading="isLogining">登 录</el-button>
       </span>
     </el-dialog>
-    <el-footer>Copyright© 2019 武汉新普惠</el-footer>
+    <el-footer>Copyright© 2019 大禹节水集团股份有限公司</el-footer>
   </el-container>
 </template>
 
